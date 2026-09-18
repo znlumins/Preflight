@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { listChapters } from '@/lib/docs';
 import { listPublicPlans } from '@/lib/publish';
 
 export const revalidate = 3600;
@@ -11,6 +12,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: base, changeFrequency: 'weekly', priority: 1 },
     { url: `${base}/rencana`, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${base}/docs`, changeFrequency: 'monthly', priority: 0.7 },
+    ...listChapters().map((c) => ({
+      url: `${base}/docs/${c.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    })),
     ...published
       .filter((p) => p.slug)
       .map((p) => ({
