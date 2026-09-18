@@ -18,6 +18,10 @@ const client =
   globalForDb.pg ??
   postgres(process.env.DATABASE_URL ?? 'postgres://postgres:postgres@127.0.0.1:5432/preflight', {
     max: 10,
+    // Transaction-mode poolers (Supabase Supavisor on :6543) multiplex one
+    // Postgres session across clients, so a named prepared statement would
+    // outlive the connection it was made on. Plain queries work everywhere.
+    prepare: !process.env.DATABASE_URL?.includes('pooler.supabase.com'),
   });
 
 if (process.env.NODE_ENV !== 'production') globalForDb.pg = client;
