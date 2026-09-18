@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { AgentSetup } from '@/components/AgentSetup';
 import { KeySettings } from '@/components/KeySettings';
+import { tokenStatus } from '@/lib/agent-token';
 import { keyStatus } from '@/lib/keys';
 import { poolUsage } from '@/lib/limits';
 import { peekSessionId } from '@/lib/session';
@@ -10,6 +12,7 @@ export default async function SettingsPage() {
   const sessionId = await peekSessionId();
   const status = sessionId ? await keyStatus(sessionId) : null;
   const usage = sessionId ? await poolUsage(sessionId) : null;
+  const agent = sessionId ? await tokenStatus(sessionId) : null;
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
@@ -35,6 +38,8 @@ export default async function SettingsPage() {
         <div className="mt-10">
           <KeySettings initial={status} usage={status ? null : usage} />
         </div>
+
+        <AgentSetup initial={agent} />
 
         <section className="mt-16 border-t border-rule pt-7">
           <h2 className="text-[15px] font-semibold text-ink">Bagaimana key kamu disimpan</h2>
