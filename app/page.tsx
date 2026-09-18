@@ -15,9 +15,14 @@ export default async function Home() {
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
       <header className="flex items-baseline justify-between">
         <span className="text-[15px] font-semibold tracking-tight text-ink">preflight</span>
-        <Link href="/pengaturan" className="text-[13.5px] text-muted hover:text-signal">
-          Pengaturan
-        </Link>
+        <nav className="flex items-baseline gap-5 text-[13.5px]">
+          <Link href="/rencana" className="text-muted hover:text-signal">
+            Contoh rencana
+          </Link>
+          <Link href="/pengaturan" className="text-muted hover:text-signal">
+            Pengaturan
+          </Link>
+        </nav>
       </header>
 
       <main className="mt-14 sm:mt-20">

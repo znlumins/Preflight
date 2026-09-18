@@ -48,6 +48,17 @@ export const plans = pgTable(
     answers: jsonb('answers'),
     prd: jsonb('prd'),
 
+    /**
+     * Public sharing.
+     *
+     * Null until the owner explicitly publishes. A plan holds someone's product
+     * idea, so this is opt-in, reversible, and never a side effect of anything
+     * else — unpublishing clears the slug, which makes the old URL a 404 rather
+     * than leaving a quietly reachable copy behind.
+     */
+    publicSlug: text('public_slug').unique(),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(now),
   },

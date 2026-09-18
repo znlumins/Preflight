@@ -27,5 +27,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
     canUndo: r.id === newestLive && !!r.snapshot,
   }));
 
-  return <PlanDocument initial={data} revisions={history} />;
+  return (
+    <PlanDocument initial={data} revisions={history} publicSlug={data.plan.publicSlug} />
+  );
 }
