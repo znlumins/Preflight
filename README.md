@@ -1,5 +1,7 @@
 # Preflight
 
+> **[Manual lengkap ada di `docs/`](docs/README.md)** — panduan pengguna, arsitektur, deploy, dan catatan keputusan.
+
 Ubah ide jadi PRD, daftar fitur, dan task berurutan — di mana **tiap task sudah berisi prompt siap tempel** ke Claude Code, Cursor, atau AI coding agent lain.
 
 Vibe coding gagal bukan karena AI-nya jelek, tapi karena perencanaannya jelek. Preflight mengisi bagian itu: hulu dari agent coding, bukan penggantinya.
