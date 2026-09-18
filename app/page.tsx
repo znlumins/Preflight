@@ -16,6 +16,9 @@ export default async function Home() {
       <header className="flex items-baseline justify-between">
         <span className="text-[15px] font-semibold tracking-tight text-ink">preflight</span>
         <nav className="flex items-baseline gap-5 text-[13.5px]">
+          <Link href="/docs" className="text-muted hover:text-signal">
+            Manual
+          </Link>
           <Link href="/rencana" className="text-muted hover:text-signal">
             Contoh rencana
           </Link>
