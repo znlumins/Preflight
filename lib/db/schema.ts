@@ -148,6 +148,29 @@ export const apiKeys = pgTable('api_keys', {
 });
 
 /**
+ * Tokens that let a coding agent reach this session over MCP.
+ *
+ * Only the SHA-256 of the token is stored, so a database dump does not hand
+ * anyone access — the raw value is shown once, when it is issued, and never
+ * again. Revoking sets `revokedAt` rather than deleting, which keeps the last
+ * use visible after the fact.
+ */
+export const mcpTokens = pgTable(
+  'mcp_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    /** Last four characters, so a person can tell which token is which. */
+    hint: text('hint').notNull(),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('mcp_tokens_session_idx').on(t.sessionId)],
+);
+
+/**
  * Per-call metering, mirroring `lib/ai/meter.ts`.
  *
  * Free quota is the scarce resource, so usage is recorded per plan from the
@@ -223,3 +246,4 @@ export type SubfeatureRow = typeof subfeatures.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type ApiKeyRow = typeof apiKeys.$inferSelect;
 export type RevisionRow = typeof revisions.$inferSelect;
+export type McpTokenRow = typeof mcpTokens.$inferSelect;
