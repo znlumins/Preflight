@@ -39,3 +39,23 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# spike output
+out/
+
+# spike logs
+*.log
+
+# local db
+preflight.db
+preflight.db-*
+
+# design review shots
+shots/
+
+# scratch output from dev scripts
+*.log
+page.html
+
+# the template belongs in the repo; only the filled-in files are secret
+!.env.example

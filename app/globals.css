@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
+/**
+ * Paper and screen.
+ *
+ * The plan is a document: warm paper, slate-blue ink, hairline structure. The
+ * only dark surface on the page is an agent prompt, because that text is on its
+ * way to a terminal. That inversion is the whole visual idea, so nothing else
+ * is allowed to compete with it.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #fdfcfa;
+  --paper-sunk: #f5f4f0;
+  --ink: #1b2a33;
+  --muted: #5e7180;
+  --faint: #8b9aa5;
+  --rule: #e3e7e5;
+  --screen: #0f1a20;
+  --screen-ink: #cfdbe2;
+  --signal: #0e7c86;
+  --signal-soft: #e3f1f2;
+  --warn: #9a5b1e;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-rule: var(--rule);
+  --color-screen: var(--screen);
+  --color-screen-ink: var(--screen-ink);
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-instrument);
+  --font-mono: var(--font-jetbrains);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv05", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard focus stays visible everywhere; pointer focus does not shout. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--signal-soft);
+  color: var(--ink);
+}
+
+/* Prompt blocks are the one dark surface; give them their own selection. */
+.screen ::selection {
+  background: #24424c;
+  color: #eaf3f6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* One orchestrated moment: a finished stage settling into the document. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settle {
+  animation: settle 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* The running stage in the pipeline rail, breathing rather than spinning. */
+@keyframes pulse-rule {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.running {
+  animation: pulse-rule 1.6s ease-in-out infinite;
 }
