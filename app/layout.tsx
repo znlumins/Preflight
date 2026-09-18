@@ -16,6 +16,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: 'Preflight — rencana sebelum ngoding',
   description:
     'Ubah ide jadi PRD, fitur, dan task yang tiap baris tugasnya sudah berupa prompt siap tempel ke AI coding agent. Gratis.',
