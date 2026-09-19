@@ -3,13 +3,13 @@ import { IdeaFlow } from '@/components/IdeaFlow';
 import { poolUsage } from '@/lib/limits';
 import { keyStatus } from '@/lib/keys';
 import { listPlans } from '@/lib/plans';
-import { peekSessionId } from '@/lib/session';
+import { clientIpHash, peekSessionId } from '@/lib/session';
 
 export default async function Home() {
   const sessionId = await peekSessionId();
   const recent = sessionId ? (await listPlans(sessionId)).reverse().slice(0, 4) : [];
   const byok = sessionId ? await keyStatus(sessionId) : null;
-  const usage = sessionId && !byok ? await poolUsage(sessionId) : null;
+  const usage = sessionId && !byok ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">

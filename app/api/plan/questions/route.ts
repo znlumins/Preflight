@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server';
-import { bad, errorMessage, pipelineFor, withUsage } from '@/lib/api';
-import { getSessionId } from '@/lib/session';
+import { bad, errorMessage, pipelineFor, readBody, withUsage } from '@/lib/api';
+import { questionsBody } from '@/lib/input';
+import { checkQuestionsLimit } from '@/lib/limits';
+import { getCaller } from '@/lib/session';
 
 export const maxDuration = 60;
 
 /** Stage 1. Runs before a plan row exists, so usage is logged without a planId. */
 export async function POST(req: Request) {
-  const sessionId = await getSessionId();
-  const { idea, context, language = 'id' } = await req.json();
+  const body = await readBody(req, questionsBody);
+  if (body.error) return body.error;
+  const { idea, context, language } = body.data;
 
-  if (typeof idea !== 'string' || idea.trim().length < 15) {
-    return bad('Ceritakan idenya sedikit lebih panjang — minimal satu kalimat utuh.');
-  }
+  const caller = await getCaller();
+  const { pipeline, byok } = await pipelineFor(caller.sessionId);
 
-  const { pipeline, byok } = await pipelineFor(sessionId);
+  const limit = await checkQuestionsLimit(caller, byok);
+  if (!limit.allowed) return bad(limit.reason!, 429);
+
   try {
-    const questionnaire = await withUsage(pipeline, sessionId, null, byok, () =>
-      pipeline.questions({ idea: idea.trim(), context, language }),
+    const questionnaire = await withUsage(pipeline, { ...caller, planId: null, byok }, () =>
+      pipeline.questions({ idea, context, language }),
     );
     return NextResponse.json(questionnaire);
   } catch (err) {

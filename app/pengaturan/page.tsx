@@ -4,14 +4,14 @@ import { KeySettings } from '@/components/KeySettings';
 import { tokenStatus } from '@/lib/agent-token';
 import { keyStatus } from '@/lib/keys';
 import { poolUsage } from '@/lib/limits';
-import { peekSessionId } from '@/lib/session';
+import { clientIpHash, peekSessionId } from '@/lib/session';
 
 export const metadata = { title: 'Pengaturan — Preflight' };
 
 export default async function SettingsPage() {
   const sessionId = await peekSessionId();
   const status = sessionId ? await keyStatus(sessionId) : null;
-  const usage = sessionId ? await poolUsage(sessionId) : null;
+  const usage = sessionId ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
   const agent = sessionId ? await tokenStatus(sessionId) : null;
 
   return (

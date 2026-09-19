@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { Pipeline } from './ai/pipeline';
 import type { FeatureSet, Prd, SpecBatch } from './ai/schemas';
 import { bad, errorMessage, pipelineFor, withUsage } from './api';
+import { checkStageLimit } from './limits';
+import { pendingStage, type StageKey as PendingStage } from './pending';
 import { loadPlan, markError } from './plans';
-import { peekSessionId } from './session';
+import { clientIpHash, peekSessionId } from './session';
 
 /**
  * Shared shape of the three post-PRD stage routes.
@@ -12,6 +14,9 @@ import { peekSessionId } from './session';
  * so a stage can be re-run after a reload, a crash, or a quota error without
  * the browser having to hold any of the plan in memory.
  */
+
+/** The stages that run on an existing PRD; `prd` has its own route. */
+type StageKey = Exclude<PendingStage, 'prd'>;
 
 type Loaded = {
   pipeline: Pipeline;
@@ -24,6 +29,7 @@ type Loaded = {
 };
 
 export async function runStage(
+  key: StageKey,
   ctx: { params: Promise<{ id: string }> },
   stage: (loaded: Loaded) => Promise<unknown>,
 ) {
@@ -34,6 +40,9 @@ export async function runStage(
   const loaded = await loadPlan(planId, sessionId);
   if (!loaded) return bad('Plan tidak ditemukan.', 404);
   if (!loaded.plan.prd) return bad('PRD belum dibuat.', 409);
+  if (pendingStage(loaded) !== key) {
+    return bad('Tahap ini sudah selesai atau belum waktunya dijalankan.', 409);
+  }
 
   // Rebuild the pipeline's view of the plan from rows.
   const featureSet: FeatureSet = {
@@ -54,8 +63,13 @@ export async function runStage(
   };
 
   const { pipeline, byok } = await pipelineFor(sessionId);
+
+  const limit = await checkStageLimit(planId, byok);
+  if (!limit.allowed) return bad(limit.reason!, 429);
+
+  const ipHash = await clientIpHash();
   try {
-    const result = await withUsage(pipeline, sessionId, planId, byok, () =>
+    const result = await withUsage(pipeline, { sessionId, ipHash, planId, byok }, () =>
       stage({
         pipeline,
         sessionId,

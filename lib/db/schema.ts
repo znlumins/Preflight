@@ -27,6 +27,8 @@ export const plans = pgTable(
     id: text('id').primaryKey(),
     /** Anonymous cookie session. No accounts in v1. */
     sessionId: text('session_id').notNull(),
+    /** Salted IP hash, so clearing the cookie does not reset the pool allowance. */
+    ipHash: text('ip_hash'),
 
     idea: text('idea').notNull(),
     context: text('context'),
@@ -62,7 +64,10 @@ export const plans = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(now),
   },
-  (t) => [index('plans_session_idx').on(t.sessionId, t.createdAt)],
+  (t) => [
+    index('plans_session_idx').on(t.sessionId, t.createdAt),
+    index('plans_ip_idx').on(t.ipHash, t.createdAt),
+  ],
 );
 
 export const features = pgTable(
@@ -182,6 +187,7 @@ export const usageLog = pgTable(
     id: serial('id').primaryKey(),
     planId: text('plan_id'),
     sessionId: text('session_id').notNull(),
+    ipHash: text('ip_hash'),
 
     stage: text('stage').notNull(),
     model: text('model').notNull(),
@@ -198,6 +204,8 @@ export const usageLog = pgTable(
   },
   (t) => [
     index('usage_session_idx').on(t.sessionId, t.createdAt),
+    index('usage_ip_idx').on(t.ipHash, t.createdAt),
+    index('usage_plan_idx').on(t.planId, t.createdAt),
     index('usage_created_idx').on(t.createdAt),
   ],
 );

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { bad } from '@/lib/api';
+import { bad, readBody } from '@/lib/api';
+import { keyBody } from '@/lib/input';
 import { deleteKey, keyStatus, saveKey, verifyKey } from '@/lib/keys';
 import { getSessionId, peekSessionId } from '@/lib/session';
 
@@ -16,11 +17,10 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const body = await readBody(req, keyBody);
+  if (body.error) return body.error;
+  const { provider, apiKey } = body.data;
   const sessionId = await getSessionId();
-  const { provider, apiKey } = await req.json();
-
-  if (provider !== 'google' && provider !== 'groq') return bad('Provider tidak dikenal.');
-  if (typeof apiKey !== 'string' || !apiKey.trim()) return bad('API key kosong.');
 
   // Check against the provider before storing, so a typo fails here rather than
   // halfway through someone's first generation.
