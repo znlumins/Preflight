@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .box { fill: #0e7c86; }
+    /* A touch brighter on dark tab strips, where the site teal sinks. */
+    @media (prefers-color-scheme: dark) { .box { fill: #1a97a2; } }
+  </style>
+  <rect class="box" width="32" height="32" rx="7"/>
+  <path d="M9 16.5l4.6 4.6L23.2 11.5" fill="none" stroke="#fdfcfa" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
