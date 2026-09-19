@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FeatureHeader, PrdSection } from './PlanParts';
+import { FeatureHeader, FeatureIndex, PrdSection, featureAnchor, taskAnchor } from './PlanParts';
+import { JumpTo } from './JumpTo';
 import { PromptBlock } from './PromptBlock';
 import { SharePlan } from './SharePlan';
 import { ReviseChat, type RevisionEntry } from './ReviseChat';
@@ -189,6 +190,8 @@ export function PlanDocument({
             </a>
           </div>
 
+          <FeatureIndex features={features} tasks={tasks} progress />
+
           <div className="mt-10 space-y-14">
             {features.map((f) => (
               <FeatureSection
@@ -209,6 +212,8 @@ export function PlanDocument({
       )}
 
       {complete && <SharePlan planId={plan.id} initialSlug={publicSlug} />}
+
+      {features.length > 1 && <JumpTo href="#daftar-fitur" label="Daftar fitur" />}
     </div>
   );
 }
@@ -287,7 +292,7 @@ function FeatureSection({
   pendingTasks: boolean;
 }) {
   return (
-    <section className="settle">
+    <section id={featureAnchor(feature.id)} className="settle">
       <FeatureHeader feature={feature} subfeatures={subfeatures} />
 
       <div className="mt-7">
@@ -302,7 +307,7 @@ function FeatureSection({
               // of the checkbox column and take the full width; from `sm` up
               // they sit indented under the title as before. Indenting them on
               // a 320px screen left the prompt about a hundred pixels wide.
-              <li key={t.id} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3.5">
+              <li key={t.id} id={taskAnchor(t.id)} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3.5">
                 <button
                   type="button"
                   onClick={() => onToggle(t)}

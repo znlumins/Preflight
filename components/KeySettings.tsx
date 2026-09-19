@@ -152,7 +152,7 @@ export function KeySettings({ initial, usage }: { initial: KeyStatus; usage: Poo
             autoComplete="off"
             spellCheck={false}
             className="mt-3 w-full max-w-md rounded-[3px] border border-rule bg-paper-sunk px-3.5 py-2.5
-                       font-mono text-[14px] text-ink placeholder:text-faint focus:bg-paper"
+                       font-mono text-[14px] text-ink placeholder:text-faint focus:bg-paper pointer-coarse:py-3 pointer-coarse:text-base"
           />
 
           {error && (

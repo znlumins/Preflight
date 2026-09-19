@@ -13,12 +13,12 @@ export default async function Home() {
   const usage = sessionId && !byok ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
+    <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-20">
       <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
         <span className="text-[15px] font-semibold tracking-tight text-ink">preflight</span>
-        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px]">
+        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px] max-sm:w-full max-sm:justify-between max-sm:gap-x-3">
           <Link href="/docs" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Manual
+            Cara pakai
           </Link>
           <Link href="/rencana" className="tap whitespace-nowrap text-muted hover:text-signal">
             Contoh rencana
@@ -29,7 +29,7 @@ export default async function Home() {
         </nav>
       </header>
 
-      <main className="mt-14 sm:mt-20">
+      <main className="mt-10 sm:mt-20">
         <h1 className="max-w-[20ch] text-[34px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[42px]">
           Apa yang mau kamu bangun?
         </h1>
@@ -51,7 +51,7 @@ export default async function Home() {
               <li key={p.id}>
                 <Link
                   href={`/plans/${p.id}`}
-                  className="group flex items-baseline gap-3 py-3 text-[15px] text-ink hover:text-signal sm:py-1.5"
+                  className="group flex items-baseline gap-3 py-3 text-[15px] text-ink hover:text-signal pointer-fine:py-1.5"
                 >
                   <span className="truncate font-medium group-hover:underline">
                     {p.title ?? p.idea.slice(0, 48)}

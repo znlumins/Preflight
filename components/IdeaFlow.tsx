@@ -111,7 +111,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
                               })
                             }
                             aria-pressed={active}
-                            className={`rounded-[3px] border px-3 py-3 text-[14px] leading-snug transition-colors duration-150 sm:py-1.5
+                            className={`rounded-[3px] border px-3 py-3 text-[14px] leading-snug transition-colors duration-150 pointer-fine:py-1.5
                               ${
                                 active
                                   ? 'border-signal bg-signal-soft font-medium text-signal'
@@ -129,8 +129,11 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
                       value={answers[q.id] ?? ''}
                       onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
                       placeholder="Jawab singkat saja"
+                      enterKeyHint="next"
+                      // 16px on touch: iOS Safari zooms into any field set
+                      // smaller when it is focused, and stays zoomed after.
                       className="mt-3.5 w-full max-w-lg border-b border-rule bg-transparent pb-1.5
-                                 text-[15px] text-ink placeholder:text-faint focus:border-muted"
+                                 text-[15px] text-ink placeholder:text-faint focus:border-muted pointer-coarse:min-h-11 pointer-coarse:text-base"
                     />
                   )}
                 </div>
@@ -146,7 +149,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
             type="button"
             onClick={generate}
             disabled={busy}
-            className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper sm:py-2.5
+            className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper pointer-fine:py-2.5
                        transition-colors hover:opacity-90 disabled:bg-rule disabled:text-faint"
           >
             {busy ? 'Menyusun rencana' : 'Susun rencana'}
@@ -189,9 +192,14 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
           if (e.key === 'Enter') e.preventDefault();
         }}
         aria-label="Batasan"
+        enterKeyHint="done"
         placeholder={`Batasannya apa? Misal: ${example.constraints}`}
+        // 16px on touch so iOS does not zoom on focus. Before Safari 26.2 there
+        // is no field-sizing, so a phone gets three rows up front instead of a
+        // one-line box that cuts the example off.
         className="mt-3 w-full resize-none border-b border-rule bg-transparent pb-1.5 text-[15px] leading-normal
-                   text-ink [field-sizing:content] placeholder:text-faint focus:border-muted"
+                   text-ink [field-sizing:content] placeholder:text-faint focus:border-muted
+                   pointer-coarse:min-h-11 pointer-coarse:text-base not-supports-[field-sizing:content]:max-sm:h-[5.25rem]"
       />
 
       {error && <Problem message={error} />}
@@ -201,7 +209,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
           type="button"
           onClick={startInterview}
           disabled={busy || tooShort}
-          className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper sm:py-2.5
+          className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper pointer-fine:py-2.5
                      transition-colors hover:opacity-90 disabled:bg-rule disabled:text-faint"
         >
           {busy ? 'Menyiapkan pertanyaan' : 'Mulai'}

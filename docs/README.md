@@ -1,4 +1,4 @@
-# Manual Preflight
+# Panduan Preflight
 
 Panduan lengkap untuk memakai, menjalankan, dan mengembangkan Preflight.
 

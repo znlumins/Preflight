@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   title: 'Preflight — rencana sebelum ngoding',
   description:
     'Ubah ide jadi PRD, fitur, dan task yang tiap baris tugasnya sudah berupa prompt siap tempel ke AI coding agent. Gratis.',
+};
+
+// The browser chrome on a phone (Android's address bar, Safari's tab bar tint)
+// takes the paper colour instead of a default grey band above the page.
+export const viewport: Viewport = {
+  themeColor: '#fdfcfa',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

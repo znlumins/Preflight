@@ -1,6 +1,6 @@
 # Preflight
 
-> **[Manual lengkap ada di `docs/`](docs/README.md)** — panduan pengguna, arsitektur, deploy, dan catatan keputusan.
+> **[Panduan lengkap ada di `docs/`](docs/README.md)** — cara pakai, arsitektur, deploy, dan catatan keputusan.
 
 Ubah ide jadi PRD, daftar fitur, dan task berurutan — di mana **tiap task sudah berisi prompt siap tempel** ke Claude Code, Cursor, atau AI coding agent lain.
 

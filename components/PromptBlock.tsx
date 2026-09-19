@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * The agent prompt, and the one dark surface in the document.
@@ -37,7 +38,7 @@ export function PromptBlock({ text }: { text: string }) {
         onClick={copy}
         aria-label={copied ? 'Prompt tersalin' : 'Salin prompt untuk AI coding agent'}
         className="block w-full cursor-copy rounded-[3px] bg-screen px-4 py-3.5 text-left
-                   transition-colors duration-150 hover:bg-[#13212a] focus-visible:outline-signal"
+                   transition-colors duration-150 hover:bg-[#13212a] active:bg-[#13212a] focus-visible:outline-signal"
       >
         {/* `anywhere`: prompts are full of paths like src/components/Foo.tsx
             with nowhere to break, which pushed a phone-width page sideways. */}
@@ -54,7 +55,7 @@ export function PromptBlock({ text }: { text: string }) {
                         ${
                           copied
                             ? 'bg-signal text-white'
-                            : 'bg-[#1d2f39] text-[#6f8794] group-hover:text-[#b6c7d1]'
+                            : 'bg-[#1d2f39] text-[#93a9b5] group-hover:text-[#b6c7d1]'
                         }`}
           >
             {copied ? 'tersalin' : 'salin'}
@@ -62,6 +63,29 @@ export function PromptBlock({ text }: { text: string }) {
           {text}
         </p>
       </button>
+
+      {/* Always mounted, so the change is announced rather than just rendered. */}
+      <div role="status" className="sr-only">
+        {copied ? 'Prompt tersalin' : ''}
+      </div>
+
+      {/* A long prompt on a phone is taller than the screen, so the label at its
+          top is often scrolled away by the time the thumb lands near the end.
+          Touch gets a notice pinned to the viewport. Portalled to <body>: the
+          feature sections animate `transform`, which would otherwise pin a
+          fixed child to the section instead of the screen. */}
+      {copied &&
+        createPortal(
+          <span
+            aria-hidden
+            className="settle pointer-events-none fixed left-1/2 top-[calc(1rem+env(safe-area-inset-top))] z-20
+                       -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-signal px-4 py-2.5 text-[14px] text-white
+                       shadow-sm pointer-fine:hidden"
+          >
+            Prompt tersalin — tempel ke agent kamu
+          </span>,
+          document.body,
+        )}
     </div>
   );
 }
