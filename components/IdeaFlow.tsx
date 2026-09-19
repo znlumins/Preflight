@@ -111,7 +111,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
                               })
                             }
                             aria-pressed={active}
-                            className={`rounded-[3px] border px-3 py-1.5 text-[14px] transition-colors duration-150
+                            className={`rounded-[3px] border px-3 py-3 text-[14px] leading-snug transition-colors duration-150 sm:py-1.5
                               ${
                                 active
                                   ? 'border-signal bg-signal-soft font-medium text-signal'
@@ -146,7 +146,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
             type="button"
             onClick={generate}
             disabled={busy}
-            className="rounded-[3px] bg-ink px-5 py-2.5 text-[15px] font-medium text-paper
+            className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper sm:py-2.5
                        transition-colors hover:opacity-90 disabled:bg-rule disabled:text-faint"
           >
             {busy ? 'Menyusun rencana' : 'Susun rencana'}
@@ -171,18 +171,27 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
         onChange={(e) => setIdea(e.target.value)}
         placeholder={example.idea}
         rows={5}
+        // Taller on a phone: the rotating examples run up to ~150 characters,
+        // which is seven lines at 320px, and a cut-off example reads as broken.
         className="mt-4 w-full resize-none rounded-[3px] border border-rule bg-paper-sunk px-4 py-3.5
                    text-[17px] leading-relaxed text-ink placeholder:text-faint
-                   focus:bg-paper"
+                   focus:bg-paper max-sm:h-56"
       />
 
-      <input
-        type="text"
+      {/* A one-line textarea rather than an input, so on a narrow screen the
+          example wraps instead of being cut off mid-word. It grows to fit
+          where field-sizing is supported; Enter still does not add a line. */}
+      <textarea
+        rows={1}
         value={context}
         onChange={(e) => setContext(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.preventDefault();
+        }}
+        aria-label="Batasan"
         placeholder={`Batasannya apa? Misal: ${example.constraints}`}
-        className="mt-3 w-full border-b border-rule bg-transparent pb-1.5 text-[15px] text-ink
-                   placeholder:text-faint focus:border-muted"
+        className="mt-3 w-full resize-none border-b border-rule bg-transparent pb-1.5 text-[15px] leading-normal
+                   text-ink [field-sizing:content] placeholder:text-faint focus:border-muted"
       />
 
       {error && <Problem message={error} />}
@@ -192,7 +201,7 @@ export function IdeaFlow({ example }: { example: ExampleIdea }) {
           type="button"
           onClick={startInterview}
           disabled={busy || tooShort}
-          className="rounded-[3px] bg-ink px-5 py-2.5 text-[15px] font-medium text-paper
+          className="rounded-[3px] bg-ink px-5 py-3 text-[15px] font-medium text-paper sm:py-2.5
                      transition-colors hover:opacity-90 disabled:bg-rule disabled:text-faint"
         >
           {busy ? 'Menyiapkan pertanyaan' : 'Mulai'}

@@ -2,6 +2,8 @@
 
 # 6. Menjalankan lokal
 
+Setup, database, dan perintah untuk menjalankan Preflight di komputermu sendiri.
+
 ---
 
 ## Prasyarat

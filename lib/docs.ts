@@ -52,14 +52,19 @@ function stripBackLink(markdown: string): string {
   return markdown.replace(/^\[← Daftar isi\]\(README\.md\)\s*\n+/, '');
 }
 
-function firstParagraph(markdown: string): string {
-  for (const block of markdown.split(/\n{2,}/)) {
-    const line = block.trim();
-    if (!line || line.startsWith('#') || line.startsWith('[') || line.startsWith('|')) continue;
-    if (line.startsWith('>') || line.startsWith('```') || line.startsWith('-')) continue;
-    return line.replace(/\s+/g, ' ').replace(/\*\*/g, '').slice(0, 200);
-  }
-  return '';
+/**
+ * The chapter's opening paragraph, or '' if it does not open with one.
+ *
+ * Only the first block counts. Searching further used to reach into the body
+ * when a chapter opened with a rule or a table, and came back with whatever
+ * prose-shaped text it met first — for chapter 6 a line from inside a code
+ * block, a connection string with no spaces that pushed the index page
+ * 200px past the edge of a phone.
+ */
+function openingParagraph(markdown: string): string {
+  const block = markdown.split(/\n{2,}/)[0]?.trim() ?? '';
+  if (!block || /^(#|\[|\||>|```|-|\*\s|\d+\.\s)/.test(block)) return '';
+  return block.replace(/\s+/g, ' ').replace(/\*\*|`/g, '').slice(0, 200);
 }
 
 export function listChapters(): Chapter[] {
@@ -73,7 +78,7 @@ export function listChapters(): Chapter[] {
       const [, number = '', title = heading] = heading.match(/^(\d+)\.\s+(.+)$/) ?? [];
 
       const afterTitle = body.replace(/^#\s+.+$/m, '').replace(/^\s+/, '');
-      const summary = firstParagraph(afterTitle);
+      const summary = openingParagraph(afterTitle);
 
       return {
         slug: file.replace(/\.md$/, ''),

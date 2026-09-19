@@ -153,7 +153,7 @@ export function FeatureHeader({
 
       {spec && (
         <details className="group mt-5">
-          <summary className="cursor-pointer list-none text-[14px] text-muted hover:text-signal">
+          <summary className="tap cursor-pointer list-none text-[14px] text-muted hover:text-signal">
             <span className="underline decoration-rule underline-offset-4 group-open:hidden">
               Lihat spec
             </span>

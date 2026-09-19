@@ -18,11 +18,11 @@ export default async function PublicIndex() {
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
-      <header className="flex items-baseline justify-between">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
+        <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
           preflight
         </Link>
-        <Link href="/" className="text-[13.5px] text-muted hover:text-signal">
+        <Link href="/" className="tap whitespace-nowrap text-[13.5px] text-muted hover:text-signal">
           Bikin rencana
         </Link>
       </header>

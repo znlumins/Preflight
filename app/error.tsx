@@ -23,8 +23,8 @@ export default function ErrorPage({
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
-      <header className="flex items-baseline justify-between">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
+        <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
           preflight
         </Link>
       </header>

@@ -71,8 +71,8 @@ export default async function PublicPlanPage({ params }: Params) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
-      <header className="flex items-baseline justify-between gap-4">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
+        <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
           preflight
         </Link>
         <span className="text-[13.5px] text-faint">Rencana yang dibagikan</span>
@@ -114,10 +114,11 @@ export default async function PublicPlanPage({ params }: Params) {
                                 {t.title}
                               </h4>
                             </div>
-                            <p className="mt-1 max-w-[64ch] pl-[1.9rem] text-[14.5px] leading-relaxed text-muted">
+                            <p className="mt-1 max-w-[64ch] text-[14.5px] leading-relaxed text-muted sm:pl-[1.9rem]">
                               {t.description}
                             </p>
-                            <div className="pl-[1.9rem]">
+                            {/* Indented under the title from `sm` up; full width on a phone. */}
+                            <div className="sm:pl-[1.9rem]">
                               <PromptBlock text={t.agentPrompt} />
                             </div>
                           </li>

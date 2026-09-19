@@ -2,6 +2,8 @@
 
 # 7. Arsitektur
 
+Bagaimana pipeline-nya bekerja, dari ide sampai task, dan kenapa bentuknya begitu.
+
 ---
 
 ## Stack
