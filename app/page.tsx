@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { IdeaFlow } from '@/components/IdeaFlow';
+import { pickExampleIdea } from '@/lib/example-ideas';
 import { poolUsage } from '@/lib/limits';
 import { keyStatus } from '@/lib/keys';
 import { listPlans } from '@/lib/plans';
@@ -38,7 +39,7 @@ export default async function Home() {
         </p>
 
         <div className="mt-10">
-          <IdeaFlow />
+          <IdeaFlow example={pickExampleIdea()} />
         </div>
       </main>
 

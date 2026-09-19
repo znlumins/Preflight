@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { Questionnaire } from '@/lib/ai/schemas';
+import type { ExampleIdea } from '@/lib/example-ideas';
 
 /**
  * The entry flow: idea, then a short interview, then generation.
@@ -15,10 +16,11 @@ import type { Questionnaire } from '@/lib/ai/schemas';
 type Step = 'idea' | 'interview';
 type Answers = Record<string, string>;
 
-const PLACEHOLDER =
-  'Aplikasi pencatat keuangan buat freelancer. Catat pemasukan per klien, sisihkan uang pajak otomatis, ingetin invoice yang belum dibayar.';
-
-export function IdeaFlow() {
+/**
+ * `example` is picked on the server, per request: choosing it here with
+ * Math.random would render one idea on the server and another on hydration.
+ */
+export function IdeaFlow({ example }: { example: ExampleIdea }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('idea');
   const [idea, setIdea] = useState('');
@@ -167,7 +169,7 @@ export function IdeaFlow() {
         id="idea"
         value={idea}
         onChange={(e) => setIdea(e.target.value)}
-        placeholder={PLACEHOLDER}
+        placeholder={example.idea}
         rows={5}
         className="mt-4 w-full resize-none rounded-[3px] border border-rule bg-paper-sunk px-4 py-3.5
                    text-[17px] leading-relaxed text-ink placeholder:text-faint
@@ -178,7 +180,7 @@ export function IdeaFlow() {
         type="text"
         value={context}
         onChange={(e) => setContext(e.target.value)}
-        placeholder="Batasannya apa? Misal: sendirian, 6 minggu, budget nol"
+        placeholder={`Batasannya apa? Misal: ${example.constraints}`}
         className="mt-3 w-full border-b border-rule bg-transparent pb-1.5 text-[15px] text-ink
                    placeholder:text-faint focus:border-muted"
       />
