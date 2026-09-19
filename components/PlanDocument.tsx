@@ -144,15 +144,15 @@ export function PlanDocument({
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-14">
-      <header className="flex items-baseline justify-between">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
+        <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
           preflight
         </Link>
-        <nav className="flex items-baseline gap-5 text-[13.5px]">
-          <Link href="/pengaturan" className="text-muted hover:text-signal">
+        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px]">
+          <Link href="/pengaturan" className="tap whitespace-nowrap text-muted hover:text-signal">
             Pengaturan
           </Link>
-          <Link href="/" className="text-muted hover:text-signal">
+          <Link href="/" className="tap whitespace-nowrap text-muted hover:text-signal">
             Rencana baru
           </Link>
         </nav>
@@ -183,7 +183,7 @@ export function PlanDocument({
             <a
               href={`/api/plan/${plan.id}/markdown`}
               download
-              className="text-[13.5px] text-muted underline decoration-rule underline-offset-4 hover:text-signal"
+              className="tap text-[13.5px] text-muted underline decoration-rule underline-offset-4 hover:text-signal"
             >
               Unduh semuanya sebagai Markdown
             </a>
@@ -298,13 +298,17 @@ function FeatureSection({
         ) : (
           <ol className="space-y-8">
             {tasks.map((t, i) => (
-              <li key={t.id} className="flex gap-3.5">
+              // A grid, so on a phone the description and prompt can drop out
+              // of the checkbox column and take the full width; from `sm` up
+              // they sit indented under the title as before. Indenting them on
+              // a 320px screen left the prompt about a hundred pixels wide.
+              <li key={t.id} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3.5">
                 <button
                   type="button"
                   onClick={() => onToggle(t)}
                   aria-pressed={t.done}
                   aria-label={t.done ? `Batalkan: ${t.title}` : `Tandai selesai: ${t.title}`}
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border
+                  className={`tap-area mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border
                     transition-colors duration-150
                     ${
                       t.done
@@ -323,17 +327,19 @@ function FeatureSection({
                   </svg>
                 </button>
 
-                <div className={`min-w-0 flex-1 ${t.done ? 'opacity-45' : ''}`}>
-                  <div className="flex items-baseline gap-2.5">
-                    <span className="font-mono text-[12px] tabular-nums text-faint">{i + 1}</span>
-                    <h4 className="text-[16px] font-medium leading-snug text-ink">{t.title}</h4>
-                  </div>
-                  <p className="mt-1 max-w-[64ch] pl-[1.9rem] text-[14.5px] leading-relaxed text-muted">
+                <div className={`flex min-w-0 items-baseline gap-2.5 ${t.done ? 'opacity-45' : ''}`}>
+                  <span className="font-mono text-[12px] tabular-nums text-faint">{i + 1}</span>
+                  <h4 className="text-[16px] font-medium leading-snug text-ink">{t.title}</h4>
+                </div>
+                <div
+                  className={`col-span-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:pl-[1.9rem] ${
+                    t.done ? 'opacity-45' : ''
+                  }`}
+                >
+                  <p className="mt-1 max-w-[64ch] text-[14.5px] leading-relaxed text-muted">
                     {t.description}
                   </p>
-                  <div className="pl-[1.9rem]">
-                    <PromptBlock text={t.agentPrompt} />
-                  </div>
+                  <PromptBlock text={t.agentPrompt} />
                 </div>
               </li>
             ))}

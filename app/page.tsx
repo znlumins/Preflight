@@ -14,16 +14,16 @@ export default async function Home() {
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-14 sm:py-20">
-      <header className="flex items-baseline justify-between">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
         <span className="text-[15px] font-semibold tracking-tight text-ink">preflight</span>
-        <nav className="flex items-baseline gap-5 text-[13.5px]">
-          <Link href="/docs" className="text-muted hover:text-signal">
+        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px]">
+          <Link href="/docs" className="tap whitespace-nowrap text-muted hover:text-signal">
             Manual
           </Link>
-          <Link href="/rencana" className="text-muted hover:text-signal">
+          <Link href="/rencana" className="tap whitespace-nowrap text-muted hover:text-signal">
             Contoh rencana
           </Link>
-          <Link href="/pengaturan" className="text-muted hover:text-signal">
+          <Link href="/pengaturan" className="tap whitespace-nowrap text-muted hover:text-signal">
             Pengaturan
           </Link>
         </nav>
@@ -51,7 +51,7 @@ export default async function Home() {
               <li key={p.id}>
                 <Link
                   href={`/plans/${p.id}`}
-                  className="group flex items-baseline gap-3 py-1.5 text-[15px] text-ink hover:text-signal"
+                  className="group flex items-baseline gap-3 py-3 text-[15px] text-ink hover:text-signal sm:py-1.5"
                 >
                   <span className="truncate font-medium group-hover:underline">
                     {p.title ?? p.idea.slice(0, 48)}

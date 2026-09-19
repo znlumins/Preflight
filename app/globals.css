@@ -68,6 +68,53 @@ body {
   color: #eaf3f6;
 }
 
+/*
+ * Touch reach for small text links.
+ *
+ * The header and inline links are set at 13–15px on purpose; a finger needs
+ * ~44px. On touch screens only, the link's hit area grows to that height
+ * through padding the negative margin cancels, so nothing moves and the
+ * type stays as quiet as it was designed to be.
+ */
+@utility tap {
+  @media (pointer: coarse) {
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+  }
+}
+
+/*
+ * The same floor everywhere on touch screens, so a new component cannot ship
+ * a 30px button by accident. In the base layer, so any utility on the element
+ * still wins. Buttons centre their content vertically in every browser, so a
+ * taller box does not move the label; inline links in running text take
+ * padding, which widens the hit area without touching line layout.
+ */
+@layer base {
+  @media (pointer: coarse) {
+    button:not(.tap-area) {
+      min-height: 2.75rem;
+    }
+    :is(p, li, td, footer) a {
+      padding-block: 0.75rem;
+    }
+  }
+}
+
+/* Same idea for a control smaller than a finger: an invisible 44px square. */
+@utility tap-area {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    transform: translate(-50%, -50%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

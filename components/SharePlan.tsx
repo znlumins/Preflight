@@ -91,7 +91,7 @@ export function SharePlan({ planId, initialSlug }: { planId: string; initialSlug
             href={`/p/${slug}`}
             target="_blank"
             rel="noreferrer"
-            className="text-[14px] text-muted underline decoration-rule underline-offset-4 hover:text-signal"
+            className="tap text-[14px] text-muted underline decoration-rule underline-offset-4 hover:text-signal"
           >
             Lihat
           </a>

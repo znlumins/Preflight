@@ -36,28 +36,32 @@ export function PromptBlock({ text }: { text: string }) {
         type="button"
         onClick={copy}
         aria-label={copied ? 'Prompt tersalin' : 'Salin prompt untuk AI coding agent'}
-        className="block w-full cursor-copy rounded-[3px] bg-screen px-4 py-3.5 pr-20 text-left
+        className="block w-full cursor-copy rounded-[3px] bg-screen px-4 py-3.5 text-left
                    transition-colors duration-150 hover:bg-[#13212a] focus-visible:outline-signal"
       >
-        <p className="font-mono text-[12.5px] leading-[1.75] text-screen-ink whitespace-pre-wrap">
+        {/* `anywhere`: prompts are full of paths like src/components/Foo.tsx
+            with nowhere to break, which pushed a phone-width page sideways. */}
+        <p className="font-mono text-[12.5px] leading-[1.75] text-screen-ink whitespace-pre-wrap [overflow-wrap:anywhere]">
+          {/* Always visible: on touch there is no hover, so a hover-only
+              affordance would leave the primary action undiscoverable on half
+              the devices. Floated rather than pinned in a padded gutter, so
+              only the first line gives up room for it — a fixed right gutter
+              left a phone about a hundred pixels per line. */}
+          <span
+            aria-hidden
+            className={`pointer-events-none float-right -mt-0.5 mb-1 ml-3 select-none rounded-[2px]
+                        px-2 py-0.5 text-[11px] tracking-tight transition-colors duration-200
+                        ${
+                          copied
+                            ? 'bg-signal text-white'
+                            : 'bg-[#1d2f39] text-[#6f8794] group-hover:text-[#b6c7d1]'
+                        }`}
+          >
+            {copied ? 'tersalin' : 'salin'}
+          </span>
           {text}
         </p>
       </button>
-
-      {/* Always visible: on touch there is no hover, so a hover-only affordance
-          would leave the primary action undiscoverable on half the devices. */}
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute right-3 top-3 select-none rounded-[2px] px-2 py-1
-                    font-mono text-[11px] tracking-tight transition-colors duration-200
-                    ${
-                      copied
-                        ? 'bg-signal text-white'
-                        : 'bg-[#1d2f39] text-[#6f8794] group-hover:text-[#b6c7d1]'
-                    }`}
-      >
-        {copied ? 'tersalin' : 'salin'}
-      </span>
     </div>
   );
 }
