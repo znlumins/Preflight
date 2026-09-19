@@ -65,7 +65,10 @@ export default async function PublicPlanPage({ params }: Params) {
     <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-14">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // The title and one-liner are model output steered by user input, so
+        // they can contain `</script>`. JSON.stringify does not escape `<`;
+        // left as is, a published plan would run script for every visitor.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
       <header className="flex items-baseline justify-between gap-4">
