@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const instrument = Instrument_Sans({
@@ -28,7 +29,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="id"
       className={`${instrument.variable} ${jetbrains.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
