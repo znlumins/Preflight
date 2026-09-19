@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { bad, errorMessage, pipelineFor, withUsage } from '@/lib/api';
+import { bad, errorMessage, pipelineFor, readBody, withUsage } from '@/lib/api';
+import { createBody } from '@/lib/input';
 import { createPlan, markError, savePrd } from '@/lib/plans';
 import { checkPlanLimit } from '@/lib/limits';
-import { getSessionId } from '@/lib/session';
+import { getCaller } from '@/lib/session';
 
 export const maxDuration = 60;
 
@@ -13,32 +14,23 @@ export const maxDuration = 60;
  * user can retry against, rather than losing their idea and answers.
  */
 export async function POST(req: Request) {
-  const sessionId = await getSessionId();
-  const { idea, context, language = 'id', questions, answers } = await req.json();
+  const body = await readBody(req, createBody);
+  if (body.error) return body.error;
+  const { idea, context, language, questions, answers } = body.data;
 
-  if (typeof idea !== 'string' || idea.trim().length < 15) {
-    return bad('Ceritakan idenya sedikit lebih panjang — minimal satu kalimat utuh.');
-  }
-
-  const { pipeline, byok } = await pipelineFor(sessionId);
+  const caller = await getCaller();
+  const { pipeline, byok } = await pipelineFor(caller.sessionId);
 
   // Checked before the row is created: refusing here costs nothing, while
   // stopping someone three stages in would waste the quota already spent.
-  const limit = await checkPlanLimit(sessionId, byok);
+  const limit = await checkPlanLimit(caller, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);
 
-  const planId = await createPlan({
-    sessionId,
-    idea: idea.trim(),
-    context,
-    language,
-    questions,
-    answers,
-  });
+  const planId = await createPlan({ ...caller, idea, context, language, questions, answers });
 
   try {
-    const prd = await withUsage(pipeline, sessionId, planId, byok, () =>
-      pipeline.prd({ idea: idea.trim(), context, language, answers }),
+    const prd = await withUsage(pipeline, { ...caller, planId, byok }, () =>
+      pipeline.prd({ idea, context, language, answers }),
     );
     await savePrd(planId, prd);
     return NextResponse.json({ planId, prd });

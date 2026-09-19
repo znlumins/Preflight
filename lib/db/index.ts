@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+import { databaseUrl, dbTarget } from './url';
 
 /**
  * Database client.
@@ -14,11 +15,21 @@ import * as schema from './schema';
  */
 const globalForDb = globalThis as unknown as { pg?: ReturnType<typeof postgres> };
 
-const client =
-  globalForDb.pg ??
-  postgres(process.env.DATABASE_URL ?? 'postgres://postgres:postgres@127.0.0.1:5432/preflight', {
+function createClient() {
+  const url = databaseUrl();
+  if (dbTarget() === 'prod' && process.env.NODE_ENV !== 'production') {
+    console.warn('[db] DB_TARGET=prod — this local server is using the PRODUCTION database.');
+  }
+  return postgres(url, {
     max: 10,
+    // Transaction-mode poolers (Supabase Supavisor on :6543) multiplex one
+    // Postgres session across clients, so a named prepared statement would
+    // outlive the connection it was made on. Plain queries work everywhere.
+    prepare: !url.includes('pooler.supabase.com'),
   });
+}
+
+const client = globalForDb.pg ?? createClient();
 
 if (process.env.NODE_ENV !== 'production') globalForDb.pg = client;
 

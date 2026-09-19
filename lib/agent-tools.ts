@@ -1,6 +1,7 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from './db';
 import { features, plans, tasks } from './db/schema';
+import { setTaskDone } from './plans';
 
 /**
  * What an agent can do with a plan.
@@ -98,10 +99,9 @@ export async function completeTask(sessionId: string, taskId: string, planId?: s
   }
 
   if (!task.done) {
-    await db
-      .update(tasks)
-      .set({ done: true })
-      .where(and(eq(tasks.planId, plan.id), eq(tasks.id, taskId)));
+    // Through setTaskDone so the plan is touched too: with no plan id given,
+    // the agent's next call should land on the plan it is working through.
+    await setTaskDone(plan.id, taskId, true);
   }
 
   const rows = await db

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { bad } from '@/lib/api';
+import { bad, readBody } from '@/lib/api';
+import { taskBody } from '@/lib/input';
 import { loadPlan, setTaskDone } from '@/lib/plans';
 import { peekSessionId } from '@/lib/session';
 
@@ -11,9 +12,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const { id: planId } = await ctx.params;
   if (!(await loadPlan(planId, sessionId))) return bad('Plan tidak ditemukan.', 404);
 
-  const { taskId, done } = await req.json();
-  if (typeof taskId !== 'string' || typeof done !== 'boolean') return bad('Payload tidak valid.');
+  const body = await readBody(req, taskBody);
+  if (body.error) return body.error;
+  const { taskId, done } = body.data;
 
-  await setTaskDone(planId, taskId, done);
+  if (!(await setTaskDone(planId, taskId, done))) return bad('Task tidak ditemukan.', 404);
   return NextResponse.json({ ok: true });
 }

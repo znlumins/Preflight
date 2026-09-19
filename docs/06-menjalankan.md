@@ -93,6 +93,20 @@ npm run db:studio    # Drizzle Studio, lihat isinya
 
 `db:push` akan bertanya kalau ada perubahan yang berisiko, dan **gagal di shell tanpa TTY**. Kalau itu terjadi, terapkan DDL-nya langsung lewat `psql`.
 
+### Lokal atau produksi
+
+Semua perintah di atas memakai database lokal. Untuk menyentuh database produksi, taruh connection string-nya di `.env.local` sebagai `DATABASE_URL_PROD`, lalu pakai varian `:prod`:
+
+```bash
+npm run dev:prod         # aplikasi lokal, data produksi
+npm run db:push:prod     # terapkan skema ke produksi
+npm run db:studio:prod   # lihat isi database produksi
+```
+
+Saklarnya variabel `DB_TARGET` (`local` atau `prod`), dan defaultnya `local`. Jadi produksi hanya tersentuh kalau kamu memintanya, dan terminal akan memasang peringatan merah selama itu. Nilai selain `local`/`prod` membuat aplikasi berhenti, bukan diam-diam memilih salah satunya.
+
+`db:push:prod` otomatis memakai port session Supabase (5432) walau `DATABASE_URL_PROD` menunjuk port transaction (6543), karena drizzle-kit butuh prepared statement.
+
 ### Mengukur biaya pipeline
 
 ```bash

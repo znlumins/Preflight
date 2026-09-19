@@ -25,27 +25,45 @@ export type PlanSnapshot = {
   tasks: (typeof tasks.$inferSelect)[];
 };
 
-async function snapshotOf(planId: string): Promise<PlanSnapshot> {
+/** The handle `db.transaction` passes to its callback. */
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function snapshotOf(tx: Tx, planId: string): Promise<PlanSnapshot> {
   const [f, s, t] = await Promise.all([
-    db.select().from(features).where(eq(features.planId, planId)),
-    db.select().from(subfeatures).where(eq(subfeatures.planId, planId)),
-    db.select().from(tasks).where(eq(tasks.planId, planId)),
+    tx.select().from(features).where(eq(features.planId, planId)),
+    tx.select().from(subfeatures).where(eq(subfeatures.planId, planId)),
+    tx.select().from(tasks).where(eq(tasks.planId, planId)),
   ]);
   return { features: f, subfeatures: s, tasks: t };
 }
 
-export async function applyRevision(
+/**
+ * One transaction per revision: an op that fails halfway (a duplicate id, a
+ * dropped connection) rolls back every op before it, so the plan is either
+ * fully revised or untouched — never half of each with no snapshot to undo to.
+ */
+export function applyRevision(
+  planId: string,
+  sessionId: string,
+  message: string,
+  revision: Revision,
+): Promise<{ applied: AppliedOp[]; skipped: AppliedOp[]; revisionId: number }> {
+  return db.transaction((tx) => applyRevisionIn(tx, planId, sessionId, message, revision));
+}
+
+async function applyRevisionIn(
+  tx: Tx,
   planId: string,
   sessionId: string,
   message: string,
   revision: Revision,
 ): Promise<{ applied: AppliedOp[]; skipped: AppliedOp[]; revisionId: number }> {
   const [featureRows, taskRows] = await Promise.all([
-    db.select().from(features).where(eq(features.planId, planId)),
-    db.select().from(tasks).where(eq(tasks.planId, planId)),
+    tx.select().from(features).where(eq(features.planId, planId)),
+    tx.select().from(tasks).where(eq(tasks.planId, planId)),
   ]);
 
-  const before = await snapshotOf(planId);
+  const before = await snapshotOf(tx, planId);
 
   const featureIds = new Set(featureRows.map((f) => f.id));
   const taskIds = new Set(taskRows.map((t) => t.id));
@@ -53,11 +71,11 @@ export async function applyRevision(
   const applied: AppliedOp[] = [];
   const skipped: AppliedOp[] = [];
 
-  const [{ value: lastFeaturePos } = { value: null }] = await db
+  const [{ value: lastFeaturePos } = { value: null }] = await tx
     .select({ value: max(features.position) })
     .from(features)
     .where(eq(features.planId, planId));
-  const [{ value: lastTaskPos } = { value: null }] = await db
+  const [{ value: lastTaskPos } = { value: null }] = await tx
     .select({ value: max(tasks.position) })
     .from(tasks)
     .where(eq(tasks.planId, planId));
@@ -88,7 +106,7 @@ export async function applyRevision(
           skipped.push(entry);
           continue;
         }
-        await db.insert(features).values({
+        await tx.insert(features).values({
           id: raw.targetId,
           planId,
           name: raw.name || raw.targetId,
@@ -113,7 +131,7 @@ export async function applyRevision(
           skipped.push(entry);
           continue;
         }
-        await db
+        await tx
           .update(features)
           .set(patch)
           .where(and(eq(features.planId, planId), eq(features.id, raw.targetId)));
@@ -127,13 +145,13 @@ export async function applyRevision(
           continue;
         }
         // Children go with the parent; orphaned tasks are worse than no change.
-        await db
+        await tx
           .delete(tasks)
           .where(and(eq(tasks.planId, planId), eq(tasks.featureId, raw.targetId)));
-        await db
+        await tx
           .delete(subfeatures)
           .where(and(eq(subfeatures.planId, planId), eq(subfeatures.featureId, raw.targetId)));
-        await db
+        await tx
           .delete(features)
           .where(and(eq(features.planId, planId), eq(features.id, raw.targetId)));
         featureIds.delete(raw.targetId);
@@ -148,14 +166,14 @@ export async function applyRevision(
         }
         // Hang it off any subfeature of the owning feature; the model rarely
         // names one on an add, and an unattached task disappears from the UI.
-        const [anySub] = await db
+        const [anySub] = await tx
           .select({ id: subfeatures.id })
           .from(subfeatures)
           .where(and(eq(subfeatures.planId, planId), eq(subfeatures.featureId, raw.featureId)))
           .orderBy(asc(subfeatures.position))
           .limit(1);
 
-        await db.insert(tasks).values({
+        await tx.insert(tasks).values({
           id: raw.targetId,
           planId,
           featureId: raw.featureId,
@@ -185,7 +203,7 @@ export async function applyRevision(
           skipped.push(entry);
           continue;
         }
-        await db
+        await tx
           .update(tasks)
           .set(patch)
           .where(and(eq(tasks.planId, planId), eq(tasks.id, raw.targetId)));
@@ -198,7 +216,7 @@ export async function applyRevision(
           skipped.push(entry);
           continue;
         }
-        await db.delete(tasks).where(and(eq(tasks.planId, planId), eq(tasks.id, raw.targetId)));
+        await tx.delete(tasks).where(and(eq(tasks.planId, planId), eq(tasks.id, raw.targetId)));
         taskIds.delete(raw.targetId);
         applied.push(entry);
         break;
@@ -209,7 +227,7 @@ export async function applyRevision(
     }
   }
 
-  const [row] = await db
+  const [row] = await tx
     .insert(revisions)
     .values({
       planId,
@@ -223,7 +241,7 @@ export async function applyRevision(
     .returning({ id: revisions.id });
 
   if (applied.length) {
-    await db.update(plans).set({ updatedAt: new Date() }).where(eq(plans.id, planId));
+    await tx.update(plans).set({ updatedAt: new Date() }).where(eq(plans.id, planId));
   }
 
   return { applied, skipped, revisionId: row.id };
@@ -242,20 +260,35 @@ export async function listRevisions(planId: string) {
  * Fills in a feature that a revision created.
  *
  * Runs after the op is already committed, so a failure here leaves a thin
- * feature rather than losing the user's edit.
+ * feature rather than losing the user's edit. Its own writes are one
+ * transaction: subfeatures without their tasks would be a half-filled feature
+ * that looks finished.
  */
-export async function expandAddedFeature(
+export function expandAddedFeature(
+  planId: string,
+  featureId: string,
+  expansion: FeatureExpansion,
+  batch: TaskBatch,
+  specs: SpecBatch,
+): Promise<void> {
+  return db.transaction((tx) =>
+    expandAddedFeatureIn(tx, planId, featureId, expansion, batch, specs),
+  );
+}
+
+async function expandAddedFeatureIn(
+  tx: Tx,
   planId: string,
   featureId: string,
   expansion: FeatureExpansion,
   batch: TaskBatch,
   specs: SpecBatch,
 ) {
-  const [{ value: lastSubPos } = { value: null }] = await db
+  const [{ value: lastSubPos } = { value: null }] = await tx
     .select({ value: max(subfeatures.position) })
     .from(subfeatures)
     .where(and(eq(subfeatures.planId, planId), eq(subfeatures.featureId, featureId)));
-  const [{ value: lastTaskPos } = { value: null }] = await db
+  const [{ value: lastTaskPos } = { value: null }] = await tx
     .select({ value: max(tasks.position) })
     .from(tasks)
     .where(eq(tasks.planId, planId));
@@ -274,7 +307,7 @@ export async function expandAddedFeature(
       summary: s.summary,
       position: subPos++,
     }));
-  if (subRows.length) await db.insert(subfeatures).values(subRows);
+  if (subRows.length) await tx.insert(subfeatures).values(subRows);
 
   // A task pointing at a subfeature that was not created would vanish from the
   // UI, so those get reattached to the first real one.
@@ -294,12 +327,12 @@ export async function expandAddedFeature(
       agentPrompt: t.agentPrompt,
       position: taskPos++,
     }));
-  if (taskRows.length) await db.insert(tasks).values(taskRows);
+  if (taskRows.length) await tx.insert(tasks).values(taskRows);
 
   // Attach the spec so the new feature reads like every other one in the plan.
   const spec = specs.specs.find((s) => s.featureId === featureId);
   if (spec) {
-    await db
+    await tx
       .update(features)
       .set({ spec })
       .where(and(eq(features.planId, planId), eq(features.id, featureId)));
@@ -312,13 +345,25 @@ export async function expandAddedFeature(
  * Replaces rather than reverses: working out the inverse of a set of operations
  * is guesswork once a cascade has removed rows, while the snapshot is exactly
  * what was there. Task completion flags come back with it.
+ *
+ * The delete-then-restore runs in one transaction: a restore that failed after
+ * the delete would otherwise leave an empty plan.
  */
-export async function undoRevision(
+export function undoRevision(
   planId: string,
   sessionId: string,
   revisionId: number,
 ): Promise<{ ok: boolean; reason?: string }> {
-  const [row] = await db
+  return db.transaction((tx) => undoRevisionIn(tx, planId, sessionId, revisionId));
+}
+
+async function undoRevisionIn(
+  tx: Tx,
+  planId: string,
+  sessionId: string,
+  revisionId: number,
+): Promise<{ ok: boolean; reason?: string }> {
+  const [row] = await tx
     .select()
     .from(revisions)
     .where(
@@ -336,7 +381,7 @@ export async function undoRevision(
 
   // Only the newest revision can be undone: rolling back an older one would
   // silently discard everything done after it.
-  const [newest] = await db
+  const [newest] = await tx
     .select({ id: revisions.id })
     .from(revisions)
     .where(and(eq(revisions.planId, planId), isNull(revisions.undoneAt)))
@@ -348,16 +393,21 @@ export async function undoRevision(
 
   const snap = row.snapshot as PlanSnapshot;
 
-  await db.delete(tasks).where(eq(tasks.planId, planId));
-  await db.delete(subfeatures).where(eq(subfeatures.planId, planId));
-  await db.delete(features).where(eq(features.planId, planId));
+  await tx.delete(tasks).where(eq(tasks.planId, planId));
+  await tx.delete(subfeatures).where(eq(subfeatures.planId, planId));
+  await tx.delete(features).where(eq(features.planId, planId));
 
-  if (snap.features.length) await db.insert(features).values(snap.features);
-  if (snap.subfeatures.length) await db.insert(subfeatures).values(snap.subfeatures);
-  if (snap.tasks.length) await db.insert(tasks).values(snap.tasks);
+  if (snap.features.length) await tx.insert(features).values(snap.features);
+  if (snap.subfeatures.length) await tx.insert(subfeatures).values(snap.subfeatures);
+  if (snap.tasks.length) await tx.insert(tasks).values(snap.tasks);
 
-  await db.update(revisions).set({ undoneAt: new Date() }).where(eq(revisions.id, revisionId));
-  await db.update(plans).set({ updatedAt: new Date() }).where(eq(plans.id, planId));
+  await tx.update(revisions).set({ undoneAt: new Date() }).where(eq(revisions.id, revisionId));
+  await tx.update(plans).set({ updatedAt: new Date() }).where(eq(plans.id, planId));
 
   return { ok: true };
+}
+
+/** Replaces a revision's stored reply, when the route adds to what the model said. */
+export async function setRevisionReply(revisionId: number, reply: string) {
+  await db.update(revisions).set({ reply }).where(eq(revisions.id, revisionId));
 }

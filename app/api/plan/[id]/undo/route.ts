@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { bad } from '@/lib/api';
+import { bad, readBody } from '@/lib/api';
+import { undoBody } from '@/lib/input';
 import { loadPlan } from '@/lib/plans';
 import { undoRevision } from '@/lib/revise';
 import { peekSessionId } from '@/lib/session';
@@ -12,8 +13,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { id: planId } = await ctx.params;
   if (!(await loadPlan(planId, sessionId))) return bad('Plan tidak ditemukan.', 404);
 
-  const { revisionId } = await req.json();
-  if (typeof revisionId !== 'number') return bad('Revisi tidak valid.');
+  const body = await readBody(req, undoBody);
+  if (body.error) return body.error;
+  const { revisionId } = body.data;
 
   const result = await undoRevision(planId, sessionId, revisionId);
   if (!result.ok) return bad(result.reason!, 409);

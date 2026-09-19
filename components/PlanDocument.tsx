@@ -8,6 +8,7 @@ import { SharePlan } from './SharePlan';
 import { ReviseChat, type RevisionEntry } from './ReviseChat';
 import type { Prd } from '@/lib/ai/schemas';
 import type { FeatureRow, PlanRow, SubfeatureRow, TaskRow } from '@/lib/db/schema';
+import { pendingStage } from '@/lib/pending';
 
 export type PlanData = {
   plan: PlanRow;
@@ -73,7 +74,9 @@ export function PlanDocument({
 
     fetch(`/api/plan/${plan.id}/${stage}`, { method: 'POST' })
       .then(async (res) => {
-        if (!res.ok) throw new Error((await res.json()).error);
+        // 409: the stage already ran, usually from another tab. Not a failure —
+        // resync and carry on from wherever the plan actually is.
+        if (!res.ok && res.status !== 409) throw new Error((await res.json()).error);
         await refresh();
       })
       .catch((err: unknown) => setFailed(err instanceof Error ? err.message : 'Gagal.'))
@@ -84,16 +87,29 @@ export function PlanDocument({
   }, [plan.status, plan.id, refresh, failed]);
 
   async function retry() {
+    // After a reload the status is just 'error', which says nothing about
+    // where it stopped; the rows do. Same rule the server enforces.
+    const stage = pendingStage(data);
+    if (!stage) {
+      setFailed(null);
+      await refresh().catch(() => {});
+      return;
+    }
+
+    // Claimed before clearing the error, or the drive effect would see no
+    // error, no request in flight, and start the same stage a second time.
+    inFlight.current = true;
     setFailed(null);
-    const stage = NEXT[plan.status] ?? 'prd';
     setRunning(stage);
     try {
       const res = await fetch(`/api/plan/${plan.id}/${stage}`, { method: 'POST' });
-      if (!res.ok) throw new Error((await res.json()).error);
+      // 409: already past this stage (another tab, or a stale page) — resync.
+      if (!res.ok && res.status !== 409) throw new Error((await res.json()).error);
       await refresh();
     } catch (err) {
       setFailed(err instanceof Error ? err.message : 'Gagal.');
     } finally {
+      inFlight.current = false;
       setRunning(null);
     }
   }
@@ -103,11 +119,24 @@ export function PlanDocument({
       ...d,
       tasks: d.tasks.map((t) => (t.id === task.id ? { ...t, done: !t.done } : t)),
     }));
-    await fetch(`/api/plan/${plan.id}/task`, {
+    const saved = await fetch(`/api/plan/${plan.id}/task`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ taskId: task.id, done: !task.done }),
-    }).catch(() => refresh());
+    }).then(
+      (res) => res.ok,
+      () => false,
+    );
+
+    // A tick the server did not keep must not stay ticked: put it back, then
+    // resync in case something else changed underneath.
+    if (!saved) {
+      setData((d) => ({
+        ...d,
+        tasks: d.tasks.map((t) => (t.id === task.id ? { ...t, done: task.done } : t)),
+      }));
+      refresh().catch(() => {});
+    }
   }
 
   const doneCount = tasks.filter((t) => t.done).length;
@@ -130,7 +159,7 @@ export function PlanDocument({
       </header>
 
       {(!complete || failed) && (
-        <StageRail status={plan.status} running={running} failed={failed} onRetry={retry} />
+        <StageRail pending={pendingStage(data)} running={running} failed={failed} onRetry={retry} />
       )}
 
       {prd ? (
@@ -185,17 +214,19 @@ export function PlanDocument({
 }
 
 function StageRail({
-  status,
+  pending,
   running,
   failed,
   onRetry,
 }: {
-  status: string;
+  pending: (typeof STAGES)[number]['key'] | null;
   running: string | null;
   failed: string | null;
   onRetry: () => void;
 }) {
-  const reached = STAGES.findIndex((s) => s.key === status);
+  // Everything before the pending stage is done. Read from the plan's rows,
+  // not its status, so an errored plan still shows how far it got.
+  const reached = pending ? STAGES.findIndex((s) => s.key === pending) - 1 : STAGES.length - 1;
 
   return (
     <div className="mt-10 border-y border-rule py-4">

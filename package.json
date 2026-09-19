@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:prod": "tsx scripts/with-db.ts prod next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "spike": "tsx scripts/spike.ts",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:push:prod": "tsx scripts/with-db.ts prod drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:studio:prod": "tsx scripts/with-db.ts prod drizzle-kit studio"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.74",

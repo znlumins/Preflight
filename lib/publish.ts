@@ -89,8 +89,22 @@ export async function loadPublicPlan(slug: string) {
   return { plan, features: featureRows, subfeatures: subRows, tasks: taskRows };
 }
 
-/** Published plans, newest first — for the sitemap and the public index. */
+/**
+ * Published plans, newest first — for the sitemap and the public index.
+ *
+ * Never throws. Both callers render at build time, and a database that is
+ * briefly unreachable should cost a stale sitemap, not a failed deployment.
+ */
 export async function listPublicPlans(limit = 200) {
+  try {
+    return await queryPublicPlans(limit);
+  } catch (err) {
+    console.error('listPublicPlans failed, serving an empty list:', err);
+    return [];
+  }
+}
+
+async function queryPublicPlans(limit: number) {
   return db
     .select({
       slug: plans.publicSlug,

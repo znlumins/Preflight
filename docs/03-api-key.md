@@ -12,13 +12,19 @@ Satu API key gratis melayani sekitar **71 rencana per hari untuk seluruh pengunj
 
 Jadi kuota bersama dijatah:
 
-| | Batas |
-|---|---|
-| Rencana baru | 3 per sesi per hari |
-| Revisi | 20 per sesi per hari |
-| Plafon global | 420 request/hari untuk semua orang |
+| | Per browser | Per jaringan (IP) |
+|---|---|---|
+| Rencana baru | 3 per hari | 6 per hari |
+| Menyiapkan pertanyaan | 8 per hari | 16 per hari |
+| Revisi | 20 request per hari | 40 request per hari |
+| Ulang tahap satu rencana | 24 request per hari per rencana | — |
+| Plafon global | 420 request/hari untuk semua orang | |
 
 Hitungannya **24 jam bergulir**, bukan reset tengah malam — jadi tidak ada tebing mendadak.
+
+Batas per jaringan ada karena batas per browser cukup diakali dengan menghapus cookie. Angkanya dibuat lebih longgar karena satu kampus atau kantor bisa berbagi satu IP. Yang disimpan hanya hash IP, bukan alamatnya.
+
+Revisi dihitung dalam request, bukan pesan: revisi yang menambah fitur ikut membayar tiga request untuk merinci tiap fitur baru. Dengan kuota bersama, paling banyak dua fitur baru dirinci per pesan; sisanya disimpan sebagai judul fitur saja.
 
 Sisa jatahmu ditampilkan di halaman depan dan di `/pengaturan`. Batas yang tidak terlihat akan terasa sewenang-wenang saat menabrak.
 
@@ -54,7 +60,7 @@ Groq didukung, tapi bukan pilihan pertama.
 | | Kuota bersama | Key sendiri |
 |---|---|---|
 | Rencana per hari | 3 | sebatas kuota providermu |
-| Revisi per hari | 20 | sebatas kuota providermu |
+| Revisi per hari | 20 request | sebatas kuota providermu |
 | Model untuk PRD | Flash-Lite | **Flash** (lebih baik) |
 
 Poin terakhir tidak sekadar bonus. Di tier gratis Google, model **Flash penuh cuma ~20 request/hari**, sementara Flash-Lite dapat ~500. Kalau kuota bersama memakai Flash, seluruh produk mentok di ~10 rencana/hari. Jadi kuota bersama jalan single-tier, dan yang membawa kuota sendiri dapat model lebih bagus untuk PRD.
