@@ -183,9 +183,13 @@ Generate `ENCRYPTION_KEY` baru untuk produksi. Kalau nilai itu berubah setelah a
 
 ## Status
 
-Bisa dipakai, masih ada yang kurang:
+Jalan di produksi: [preflight.luminszn.my.id](https://preflight.luminszn.my.id).
+
+Agent coding bisa menarik task langsung lewat MCP: ambil task berikutnya, tandai selesai, cek progres. Claude Code dan Cursor sudah didukung, caranya di [5. Sambungkan agent](docs/05-agent.md).
+
+Yang belum ada:
 
 - Revisi belum bisa mengubah PRD, baru fitur dan task
-- Undo baru satu langkah ke belakang
+- Undo hanya mundur berurutan dari revisi terbaru; belum bisa membatalkan revisi lama langsung, dan belum ada redo
 - Belum ada ekspor ke format selain Markdown
-- Belum ada CLI untuk menarik task langsung ke dalam agent
+- Rencana terikat ke browser lewat cookie; belum ada akun, jadi belum bisa dibuka dari perangkat lain
