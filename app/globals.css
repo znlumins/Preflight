@@ -40,6 +40,21 @@
 
 html {
   background: var(--paper);
+  /* Mobile browsers paint a grey slab over whatever is tapped. Buttons here
+     carry their own :active state instead, shaped like the control. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Jumping through a 20,000px plan on a phone reads as a jump, not a teleport. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* An anchor target lands with room above it rather than flush to the top edge. */
+[id] {
+  scroll-margin-top: 1.5rem;
 }
 
 body {
@@ -97,6 +112,12 @@ body {
     }
     :is(p, li, td, footer) a {
       padding-block: 0.75rem;
+    }
+    /* Touch has no hover, so a press is the only feedback a tap gets. Not on a
+       prompt block: it is most of the screen, and a scroll that starts on it
+       would flicker the whole thing. It darkens on press instead. */
+    :is(a, button, summary, label):not(.screen *):active {
+      opacity: 0.65;
     }
   }
 }

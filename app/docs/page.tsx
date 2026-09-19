@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { listChapters } from '@/lib/docs';
 
 export const metadata: Metadata = {
-  title: 'Manual Preflight',
+  title: 'Panduan Preflight',
   description:
     'Panduan lengkap Preflight: cara memakai, memasang API key sendiri, berbagi rencana, menyambungkan AI coding agent, arsitektur, deploy, dan catatan keputusan teknisnya.',
   alternates: { canonical: '/docs' },
@@ -17,11 +17,14 @@ export default function DocsIndex() {
   return (
     <div>
       <h1 className="max-w-[20ch] text-[32px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[38px]">
-        Manual Preflight
+        Panduan Preflight
       </h1>
+      {/* Says what this page is before anything else: "Manual" in the header
+          left people guessing whether it was a manual for the app or for
+          something the app makes. */}
       <p className="mt-5 max-w-[62ch] text-[16.5px] leading-relaxed text-muted">
-        Preflight mengubah ide jadi PRD, daftar fitur, dan task berurutan — di mana tiap task sudah
-        berisi prompt siap tempel ke AI coding agent. Jalan di atas model AI gratis.
+        Cara memakai Preflight, dari menulis ide sampai task dikerjakan AI coding agent. Bagian
+        kedua untuk yang mau menjalankan atau mengubah kodenya sendiri.
       </p>
 
       {[

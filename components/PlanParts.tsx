@@ -114,6 +114,71 @@ export function SpecPart({ heading, items }: { heading: string; items: string[] 
   );
 }
 
+/** Anchor for a feature section, shared by the index and the section itself. */
+export const featureAnchor = (id: string) => `fitur-${id}`;
+export const taskAnchor = (id: string) => `task-${id}`;
+
+/**
+ * Contents for the work plan.
+ *
+ * A finished plan runs to twenty thousand pixels on a phone, and the feature
+ * someone wants is usually not the first. Plain anchors, so it works on the
+ * public page with no JavaScript. `progress` is the owner's view: ticked tasks
+ * per feature, and a jump to the first one still open.
+ */
+export function FeatureIndex({
+  features,
+  tasks,
+  progress = false,
+}: {
+  features: FeatureRow[];
+  tasks: { id: string; featureId: string; done: boolean }[];
+  progress?: boolean;
+}) {
+  if (features.length < 2) return null;
+
+  // Tasks arrive grouped per feature in display order, so the first open one
+  // in feature order is the next thing to do.
+  const next = progress
+    ? features.flatMap((f) => tasks.filter((t) => t.featureId === f.id)).find((t) => !t.done)
+    : undefined;
+
+  return (
+    <nav id="daftar-fitur" aria-label="Daftar fitur" className="mt-8 border-l-2 border-rule pl-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h3 className="text-[13px] font-semibold text-faint">Daftar fitur</h3>
+        {next && (
+          <a
+            href={`#${taskAnchor(next.id)}`}
+            className="tap text-[13.5px] font-medium text-signal underline decoration-signal/30 underline-offset-4"
+          >
+            Lanjut ke task berikutnya
+          </a>
+        )}
+      </div>
+      <ol className="mt-2">
+        {features.map((f) => {
+          const own = tasks.filter((t) => t.featureId === f.id);
+          const done = own.filter((t) => t.done).length;
+          return (
+            <li key={f.id}>
+              <a
+                href={`#${featureAnchor(f.id)}`}
+                className="group flex items-baseline justify-between gap-4 py-3 text-[14.5px] leading-snug pointer-fine:py-1"
+              >
+                <span className="min-w-0 text-muted group-hover:text-signal">{f.name}</span>
+                <span className="shrink-0 font-mono text-[12px] tabular-nums text-faint">
+                  {progress ? `${done}/${own.length}` : own.length}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 /** Feature heading, subfeatures and spec — everything above the task list. */
 export function FeatureHeader({
   feature,

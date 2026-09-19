@@ -149,10 +149,11 @@ export function ReviseChat({
           }}
           placeholder="Misal: tambahkan fitur reset password di Autentikasi"
           rows={2}
+          enterKeyHint="send"
           disabled={busy}
           className="w-full resize-none rounded-[3px] border border-rule bg-paper-sunk px-4 py-3
                      text-[15.5px] leading-relaxed text-ink placeholder:text-faint
-                     focus:bg-paper disabled:opacity-60"
+                     focus:bg-paper disabled:opacity-60 pointer-coarse:text-base"
         />
 
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-3">

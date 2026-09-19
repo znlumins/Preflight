@@ -20,9 +20,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
           preflight
         </Link>
-        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px]">
+        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px] max-sm:w-full max-sm:justify-between max-sm:gap-x-3">
           <Link href="/docs" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Manual
+            Cara pakai
           </Link>
           <Link href="/rencana" className="tap whitespace-nowrap text-muted hover:text-signal">
             Contoh rencana

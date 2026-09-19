@@ -88,7 +88,7 @@ for (const page of pages) {
 const home = read('README.md').replace(/^# .+\n+/m, '');
 write(
   'Home.md',
-  `> Versi wiki dari [manual di situs](${SITE}/docs). Isinya sama.\n\n` +
+  `> Versi wiki dari [panduan di situs](${SITE}/docs). Isinya sama.\n\n` +
     relink(home).trimEnd() +
     footer('README.md'),
 );
@@ -101,7 +101,7 @@ const devs = pages.filter((p) => Number(p.number) > 5);
 write(
   '_Sidebar.md',
   [
-    '**[Manual Preflight](Home)**',
+    '**[Panduan Preflight](Home)**',
     '',
     '**Untuk pengguna**',
     ...users.map(link),

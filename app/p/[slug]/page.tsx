@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { FeatureHeader, PrdSection } from '@/components/PlanParts';
+import { JumpTo } from '@/components/JumpTo';
+import { FeatureHeader, FeatureIndex, PrdSection, featureAnchor } from '@/components/PlanParts';
 import { PromptBlock } from '@/components/PromptBlock';
 import type { Prd } from '@/lib/ai/schemas';
 import { loadPublicPlan } from '@/lib/publish';
@@ -89,11 +90,13 @@ export default async function PublicPlanPage({ params }: Params) {
             </p>
           </div>
 
+          <FeatureIndex features={features} tasks={tasks} />
+
           <div className="mt-10 space-y-14">
             {features.map((f) => {
               const own = tasks.filter((t) => t.featureId === f.id);
               return (
-                <section key={f.id}>
+                <section key={f.id} id={featureAnchor(f.id)}>
                   <FeatureHeader
                     feature={f}
                     subfeatures={subfeatures.filter((s) => s.featureId === f.id)}
@@ -144,11 +147,13 @@ export default async function PublicPlanPage({ params }: Params) {
         </p>
         <Link
           href="/"
-          className="mt-5 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-[15px] font-medium text-paper transition-opacity hover:opacity-90"
+          className="mt-5 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-[15px] font-medium text-paper pointer-coarse:py-3 transition-opacity hover:opacity-90"
         >
           Bikin rencana kamu sendiri
         </Link>
       </section>
+
+      {features.length > 1 && <JumpTo href="#daftar-fitur" label="Daftar fitur" />}
     </div>
   );
 }

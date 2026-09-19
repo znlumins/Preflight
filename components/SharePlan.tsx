@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+
+// Neither the Web Share API nor the pointer type changes while a page is open.
+const noSubscribe = () => () => {};
 
 /**
  * Publishing a plan to a public URL.
@@ -19,6 +22,15 @@ export function SharePlan({ planId, initialSlug }: { planId: string; initialSlug
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  // False on the server, which has no `navigator`; hydration then picks up
+  // the real answer without a mismatch. Touch only — desktop browsers ship the
+  // API too, but there a copied link is what people expect.
+  const canShare = useSyncExternalStore(
+    noSubscribe,
+    () => typeof navigator.share === 'function' && matchMedia('(pointer: coarse)').matches,
+    () => false,
+  );
 
   // Read from the environment rather than `window.location`: the latter is
   // empty during server rendering and populated on the client, which renders
@@ -66,6 +78,20 @@ export function SharePlan({ planId, initialSlug }: { planId: string; initialSlug
     }
   }
 
+  /**
+   * The phone's own share sheet. On a phone the link is almost always headed
+   * for a chat app, and copy, switch app, paste is three steps where this is
+   * one. Dismissing the sheet rejects with AbortError, which is not a failure.
+   */
+  async function share() {
+    try {
+      await navigator.share({ title: document.title, url });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      copy();
+    }
+  }
+
   if (slug) {
     return (
       <section className="mt-16 border-t border-rule pt-8">
@@ -76,14 +102,27 @@ export function SharePlan({ planId, initialSlug }: { planId: string; initialSlug
           tidak ikut.
         </p>
 
+        {/* On a phone the address takes its own line, so the buttons below it
+            are not squeezed into what the truncated URL leaves over. */}
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <code className="min-w-0 flex-1 truncate rounded-[3px] border border-rule bg-paper-sunk px-3 py-2 font-mono text-[13.5px] text-ink">
+          <code className="min-w-0 flex-1 truncate rounded-[3px] border border-rule bg-paper-sunk px-3 py-2 font-mono text-[13.5px] text-ink max-sm:basis-full">
             {url}
           </code>
+          {canShare && (
+            <button
+              type="button"
+              onClick={share}
+              className="rounded-[3px] bg-ink px-4 py-2 text-[14px] font-medium text-paper transition-opacity hover:opacity-90"
+            >
+              Bagikan
+            </button>
+          )}
           <button
             type="button"
             onClick={copy}
-            className="rounded-[3px] bg-ink px-4 py-2 text-[14px] font-medium text-paper transition-opacity hover:opacity-90"
+            className={`rounded-[3px] px-4 py-2 text-[14px] font-medium transition-opacity hover:opacity-90 ${
+              canShare ? 'border border-rule text-ink' : 'bg-ink text-paper'
+            }`}
           >
             {copied ? 'Tersalin' : 'Salin tautan'}
           </button>

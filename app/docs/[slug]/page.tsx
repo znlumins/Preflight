@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { JumpTo } from '@/components/JumpTo';
 import { Markdown } from '@/components/Markdown';
 import { getChapter, headings, listChapters, neighbours } from '@/lib/docs';
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!chapter) return { title: 'Bab tidak ditemukan — Preflight' };
 
   return {
-    title: `${chapter.title} — Manual Preflight`,
+    title: `${chapter.title} — Panduan Preflight`,
     description: chapter.summary,
     openGraph: { title: chapter.title, description: chapter.summary, type: 'article' },
     alternates: { canonical: `/docs/${slug}` },
@@ -86,6 +87,9 @@ export default async function ChapterPage({ params }: Params) {
           </Link>
         )}
       </nav>
+
+      {/* `#top` scrolls to the start of the document with no element to match. */}
+      <JumpTo href="#top" label="Ke atas" />
     </article>
   );
 }

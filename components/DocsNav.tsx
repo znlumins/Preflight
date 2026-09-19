@@ -29,7 +29,7 @@ export function DocsNav({ chapters, current }: { chapters: Chapter[]; current?: 
                   <Link
                     href={`/docs/${c.slug}`}
                     aria-current={active ? 'page' : undefined}
-                    className={`-mx-2 flex gap-2.5 rounded-[3px] px-2 py-3 leading-snug transition-colors lg:py-1.5
+                    className={`-mx-2 flex gap-2.5 rounded-[3px] px-2 py-3 leading-snug transition-colors pointer-fine:py-1.5
                       ${
                         active
                           ? 'bg-signal-soft font-medium text-signal'
