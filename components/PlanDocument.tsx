@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FeatureHeader, FeatureIndex, PrdSection, featureAnchor, taskAnchor } from './PlanParts';
 import { JumpTo } from './JumpTo';
+import { SiteHeader } from './SiteHeader';
 import { PromptBlock } from './PromptBlock';
 import { SharePlan } from './SharePlan';
 import { ReviseChat, type RevisionEntry } from './ReviseChat';
@@ -145,19 +145,12 @@ export function PlanDocument({
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-14">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
-        <Link href="/" className="tap text-[15px] font-semibold tracking-tight text-ink hover:text-signal">
-          preflight
-        </Link>
-        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px]">
-          <Link href="/pengaturan" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Pengaturan
-          </Link>
-          <Link href="/" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Rencana baru
-          </Link>
-        </nav>
-      </header>
+      <SiteHeader
+        links={[
+          { href: '/pengaturan', label: 'Pengaturan' },
+          { href: '/', label: 'Rencana baru' },
+        ]}
+      />
 
       {(!complete || failed) && (
         <StageRail pending={pendingStage(data)} running={running} failed={failed} onRetry={retry} />

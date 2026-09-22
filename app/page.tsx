@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { IdeaFlow } from '@/components/IdeaFlow';
+import { SiteHeader } from '@/components/SiteHeader';
 import { pickExampleIdea } from '@/lib/example-ideas';
 import { poolUsage } from '@/lib/limits';
 import { keyStatus } from '@/lib/keys';
@@ -47,20 +48,13 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
-        <span className="text-[15px] font-semibold tracking-tight text-ink">preflight</span>
-        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13.5px] max-sm:w-full max-sm:justify-between max-sm:gap-x-3">
-          <Link href="/docs" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Cara pakai
-          </Link>
-          <Link href="/rencana" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Contoh rencana
-          </Link>
-          <Link href="/pengaturan" className="tap whitespace-nowrap text-muted hover:text-signal">
-            Pengaturan
-          </Link>
-        </nav>
-      </header>
+      <SiteHeader
+        links={[
+          { href: '/docs', label: 'Cara pakai' },
+          { href: '/rencana', label: 'Contoh rencana' },
+          { href: '/pengaturan', label: 'Pengaturan' },
+        ]}
+      />
 
       <main className="mt-10 sm:mt-20">
         <h1 className="max-w-[20ch] text-[34px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[42px]">
