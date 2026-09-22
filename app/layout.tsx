@@ -20,6 +20,17 @@ export const metadata: Metadata = {
   title: 'Preflight — rencana sebelum ngoding',
   description:
     'Ubah ide jadi PRD, fitur, dan task yang tiap baris tugasnya sudah berupa prompt siap tempel ke AI coding agent. Gratis.',
+  // Fallbacks only: routes with their own metadata (`/p/[slug]`, `/docs/*`,
+  // `/rencana`) override these per field, so a plan's own title still wins.
+  openGraph: {
+    type: 'website',
+    siteName: 'Preflight',
+    locale: 'id_ID',
+    title: 'Preflight — rencana sebelum ngoding',
+    description:
+      'Ubah ide jadi PRD, fitur, dan task yang tiap baris tugasnya sudah berupa prompt siap tempel ke AI coding agent. Gratis.',
+  },
+  twitter: { card: 'summary_large_image' },
 };
 
 // The browser chrome on a phone (Android's address bar, Safari's tab bar tint)

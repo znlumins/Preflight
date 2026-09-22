@@ -79,7 +79,11 @@ export default async function PublicPlanPage({ params }: Params) {
         <span className="text-[13.5px] text-faint">Rencana yang dibagikan</span>
       </header>
 
-      <PrdSection prd={prd} animate={false} />
+      <PrdSection
+        prd={prd}
+        animate={false}
+        download={{ href: `/p/${slug}/markdown`, label: 'Unduh rencana ini (.md)' }}
+      />
 
       {features.length > 0 && (
         <section className="mt-16 border-t border-rule pt-8">
