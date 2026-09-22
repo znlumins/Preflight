@@ -34,13 +34,44 @@ export function Bullets({ items }: { items: string[] }) {
   );
 }
 
-export function PrdSection({ prd, animate = true }: { prd: Prd; animate?: boolean }) {
+export function PrdSection({
+  prd,
+  animate = true,
+  download,
+}: {
+  prd: Prd;
+  animate?: boolean;
+  /** Rendered right under the title: where a reader decides to keep the plan. */
+  download?: { href: string; label: string };
+}) {
   return (
     <article className={`${animate ? 'settle ' : ''}mt-14`}>
       <h1 className="text-[34px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[40px]">
         {prd.title}
       </h1>
       <p className="mt-4 max-w-[58ch] text-[17px] leading-relaxed text-muted">{prd.oneLiner}</p>
+
+      {download && (
+        <div className="mt-6">
+          <a
+            href={download.href}
+            download
+            className="tap inline-flex items-center gap-2 rounded-[3px] border border-rule bg-paper-sunk px-4 py-2.5 text-[14.5px] font-medium text-ink transition-colors hover:border-signal hover:text-signal"
+          >
+            {/* Icon plus a verb: reads as an action, not a footnote. */}
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden className="h-4 w-4">
+              <path
+                d="M8 2v8m0 0l3.5-3.5M8 10L4.5 6.5M2.5 13.5h11"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {download.label}
+          </a>
+        </div>
+      )}
 
       <div className="mt-11 space-y-9">
         <Prose heading="Masalah">

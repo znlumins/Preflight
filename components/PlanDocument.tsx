@@ -164,7 +164,10 @@ export function PlanDocument({
       )}
 
       {prd ? (
-        <PrdSection prd={prd} />
+        <PrdSection
+          prd={prd}
+          download={{ href: `/api/plan/${plan.id}/markdown`, label: 'Unduh semuanya (.md)' }}
+        />
       ) : (
         <p className="mt-16 text-[16px] text-muted">Menyusun PRD dari jawaban kamu…</p>
       )}
@@ -178,16 +181,6 @@ export function PlanDocument({
                 {doneCount} dari {tasks.length} task selesai
               </p>
             )}
-          </div>
-
-          <div className="mt-2">
-            <a
-              href={`/api/plan/${plan.id}/markdown`}
-              download
-              className="tap text-[13.5px] text-muted underline decoration-rule underline-offset-4 hover:text-signal"
-            >
-              Unduh semuanya sebagai Markdown
-            </a>
           </div>
 
           <FeatureIndex features={features} tasks={tasks} progress />
