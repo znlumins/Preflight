@@ -14,10 +14,15 @@ import { recordUsage } from './plans';
  * Tiering follows whose quota pays. On the shared pool the deep tier is off,
  * because Google's full Flash models allow only ~20 free requests a day against
  * Flash-Lite's ~500 — using it would cap the whole product at ~10 plans daily.
- * Someone spending their own quota gets the better model for the PRD.
  */
-export async function pipelineFor(sessionId: string) {
-  const { creds, byok } = await credentialsFor(sessionId);
+import type { ProviderId } from './ai/provider';
+
+export async function pipelineFor(
+  sessionId: string,
+  provider?: ProviderId,
+  model?: string,
+) {
+  const { creds, byok } = await credentialsFor(sessionId, provider, model);
   return { pipeline: new Pipeline(creds, { singleTier: !byok }), byok };
 }
 

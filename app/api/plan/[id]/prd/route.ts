@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { bad, errorMessage, pipelineFor, withUsage } from '@/lib/api';
 import type { Answer } from '@/lib/ai/pipeline';
+import type { ProviderId } from '@/lib/ai/provider';
 import { checkStageLimit } from '@/lib/limits';
 import { pendingStage } from '@/lib/pending';
 import { loadPlan, markError, savePrd } from '@/lib/plans';
@@ -28,7 +29,11 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   const { plan } = loaded;
-  const { pipeline, byok } = await pipelineFor(sessionId);
+  const { pipeline, byok } = await pipelineFor(
+    sessionId,
+    (plan.provider as ProviderId) ?? undefined,
+    plan.model ?? undefined,
+  );
 
   const limit = await checkStageLimit(planId, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);

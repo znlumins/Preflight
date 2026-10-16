@@ -47,10 +47,12 @@ export function PlanDocument({
   initial,
   revisions,
   publicSlug,
+  hideHeader,
 }: {
   initial: PlanData;
   revisions: RevisionEntry[];
   publicSlug: string | null;
+  hideHeader?: boolean;
 }) {
   const [data, setData] = useState(initial);
   const [running, setRunning] = useState<string | null>(null);
@@ -145,12 +147,14 @@ export function PlanDocument({
 
   return (
     <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-14">
-      <SiteHeader
-        links={[
-          { href: '/pengaturan', label: 'Pengaturan' },
-          { href: '/', label: 'Rencana baru' },
-        ]}
-      />
+      {!hideHeader && (
+        <SiteHeader
+          links={[
+            { href: '/pengaturan', label: 'Pengaturan' },
+            { href: '/', label: 'Rencana baru' },
+          ]}
+        />
+      )}
 
       {(!complete || failed) && (
         <StageRail pending={pendingStage(data)} running={running} failed={failed} onRetry={retry} />

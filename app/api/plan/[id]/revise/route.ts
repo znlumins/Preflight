@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { bad, errorMessage, pipelineFor, readBody, withUsage } from '@/lib/api';
+import type { ProviderId } from '@/lib/ai/provider';
 import type { FeatureSet, Prd, TaskBatch } from '@/lib/ai/schemas';
 import { reviseBody } from '@/lib/input';
 import { checkRevisionLimit, REQUESTS_PER_EXPANSION } from '@/lib/limits';
@@ -38,7 +39,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { message } = body.data;
 
   const caller = { sessionId, ipHash: await clientIpHash() };
-  const { pipeline, byok } = await pipelineFor(sessionId);
+  const { pipeline, byok } = await pipelineFor(
+    sessionId,
+    (loaded.plan.provider as ProviderId) ?? undefined,
+    loaded.plan.model ?? undefined,
+  );
 
   const limit = await checkRevisionLimit(caller, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);

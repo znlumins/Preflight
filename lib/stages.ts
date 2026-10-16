@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Pipeline } from './ai/pipeline';
+import type { ProviderId } from './ai/provider';
 import type { FeatureSet, Prd, SpecBatch } from './ai/schemas';
 import { bad, errorMessage, pipelineFor, withUsage } from './api';
 import { checkStageLimit } from './limits';
@@ -62,7 +63,11 @@ export async function runStage(
       .map((f) => f.spec as SpecBatch['specs'][number]),
   };
 
-  const { pipeline, byok } = await pipelineFor(sessionId);
+  const { pipeline, byok } = await pipelineFor(
+    sessionId,
+    (loaded.plan.provider as ProviderId) ?? undefined,
+    loaded.plan.model ?? undefined,
+  );
 
   const limit = await checkStageLimit(planId, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);

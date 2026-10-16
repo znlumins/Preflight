@@ -90,11 +90,11 @@ ${langRule(lang)} This includes task titles and descriptions — "${
   lang === 'id' ? 'Buat endpoint reset password' : 'Add password reset endpoint'
 }", not the other language. File paths, identifiers and library names stay in English inside that sentence.
 
-The 'agentPrompt' field is the actual product. Everything else is metadata. Write it as an instruction you would paste straight into Claude Code or Cursor with no editing:
+The 'agentPrompt' field is the actual product. Everything else is metadata. Write it as a universal, self-contained instruction ready to execute in any AI coding agent (Claude Code, Cursor, Antigravity, Windsurf, Roo Code, Aider) with no editing:
 - State the goal in one line.
 - Name the files or modules to create or change, using the given tech stack's conventions.
 - State the constraints that matter: the contract with other tasks, the data shape, the error cases.
-- End with how to verify it works — a command to run, or an observable behaviour.
+- End with how to verify it works — a command to run (e.g. test runner, curl, typecheck), or an observable behaviour.
 - Assume the agent can read the repository but has never seen the PRD. Do not reference "the PRD", "the spec" or task ids inside the prompt.
 
 Granularity is the thing you will get wrong. One task per subfeature is always too coarse. Split a subfeature wherever the pieces can fail independently — typically:

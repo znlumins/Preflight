@@ -8,7 +8,7 @@ Daripada menyalin 36 prompt satu per satu, biarkan agent-nya yang mengambil send
 
 Agent ambil task, kerjakan, tandai selesai, lanjut ke berikutnya — sendiri.
 
-Jalan di **Claude Code** dan **Cursor** lewat MCP (Model Context Protocol).
+Jalan secara universal di **Claude Code**, **Cursor**, **Antigravity**, **Windsurf**, dan **VS Code (Roo Code / Cline)** lewat MCP (Model Context Protocol).
 
 ---
 
@@ -18,7 +18,7 @@ Jalan di **Claude Code** dan **Cursor** lewat MCP (Model Context Protocol).
 
 Buka **`/pengaturan`**, gulir ke **Sambungkan ke AI coding agent**, klik **Buat token**.
 
-Muncul konfigurasi lengkap, sudah berisi token-nya. **Salin sekarang** — nilainya hanya ditampilkan sekali dan tidak bisa dilihat lagi.
+Muncul konfigurasi lengkap yang bisa kamu pilih sesuai editor yang kamu pakai, sudah berisi token-nya. **Salin sekarang** — nilainya hanya ditampilkan sekali dan tidak bisa dilihat lagi.
 
 ### 2. Tempel ke editormu
 
@@ -35,10 +35,13 @@ Isinya seperti ini:
 }
 ```
 
-| Editor | Taruh di |
+| Editor / Agent | Taruh di |
 |---|---|
 | **Claude Code** | `.mcp.json` di root proyek, atau `~/.claude.json` untuk semua proyek |
-| **Cursor** | Settings → MCP → Add server |
+| **Cursor** | `.cursor/mcp.json` atau Settings → Features → MCP → Add server |
+| **Antigravity** | Konfigurasi MCP di settings IDE / `mcp_config.json` |
+| **Windsurf (Cascade)** | `~/.codeium/windsurf/mcp_config.json` (gunakan `serverUrl`) |
+| **VS Code (Roo Code / Cline)** | `cline_mcp_settings.json` atau `.vscode/mcp.json` |
 
 ### 3. Mulai
 

@@ -60,3 +60,4 @@ page.html
 # the template belongs in the repo; only the filled-in files are secret
 !.env.example
 pub.html
+.freebuff/

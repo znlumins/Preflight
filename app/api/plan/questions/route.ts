@@ -10,10 +10,10 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const body = await readBody(req, questionsBody);
   if (body.error) return body.error;
-  const { idea, context, language } = body.data;
+  const { idea, context, language, provider, model } = body.data;
 
   const caller = await getCaller();
-  const { pipeline, byok } = await pipelineFor(caller.sessionId);
+  const { pipeline, byok } = await pipelineFor(caller.sessionId, provider, model);
 
   const limit = await checkQuestionsLimit(caller, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);

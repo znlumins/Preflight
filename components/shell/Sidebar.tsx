@@ -1,0 +1,405 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import type { KeyStatusMap } from '@/lib/keys';
+import type { PoolUsage } from '@/lib/limits';
+
+export type SidebarPlanItem = {
+  id: string;
+  title: string | null;
+  idea: string;
+  status: string;
+  createdAt: string | Date;
+};
+
+export function Sidebar({
+  plans,
+  currentPlanId,
+  isOpen,
+  onToggle,
+  onOpenSettings,
+  savedKeys,
+}: {
+  plans: SidebarPlanItem[];
+  currentPlanId?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onOpenSettings: () => void;
+  savedKeys?: KeyStatusMap | null;
+  usage?: PoolUsage | null;
+}) {
+  const router = useRouter();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const [filter, setFilter] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const planList = useMemo(
+    () => plans.filter((p) => !deletedIds.includes(p.id)),
+    [plans, deletedIds],
+  );
+
+  const hasByok = Boolean(savedKeys && Object.keys(savedKeys).length > 0);
+
+  // Grouping plans by date
+  const grouped = useMemo(() => {
+    const query = filter.trim().toLowerCase();
+    const filtered = query
+      ? planList.filter(
+          (p) =>
+            (p.title && p.title.toLowerCase().includes(query)) ||
+            p.idea.toLowerCase().includes(query),
+        )
+      : planList;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const sevenDaysAgo = startOfToday - 7 * 24 * 60 * 60 * 1000;
+
+    const groups: { label: string; items: SidebarPlanItem[] }[] = [
+      { label: 'Hari ini', items: [] },
+      { label: '7 hari terakhir', items: [] },
+      { label: 'Sebelumnya', items: [] },
+    ];
+
+    const sorted = [...filtered].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    for (const item of sorted) {
+      const time = new Date(item.createdAt).getTime();
+      if (time >= startOfToday) {
+        groups[0].items.push(item);
+      } else if (time >= sevenDaysAgo) {
+        groups[1].items.push(item);
+      } else {
+        groups[2].items.push(item);
+      }
+    }
+
+    return groups.filter((g) => g.items.length > 0);
+  }, [planList, filter]);
+
+  async function handleDelete(e: React.MouseEvent, id: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Hapus rencana ini?')) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/plan/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDeletedIds((prev) => [...prev, id]);
+        if (currentPlanId === id) {
+          router.push('/');
+        }
+      }
+    } catch {
+      alert('Gagal menghapus rencana.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
+          onClick={onToggle}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col bg-[#2b3839] text-gray-200 ${
+          mounted ? 'transition-[width,transform] duration-200 ease-in-out' : ''
+        } md:static shrink-0 select-none overflow-x-hidden ${
+          isOpen ? 'w-60 translate-x-0' : '-translate-x-full md:translate-x-0 md:w-16'
+        }`}
+      >
+        {/* Top Header of Sidebar: Toggle Icon + Search (when expanded) */}
+        <div className="flex h-14 items-center px-3 pt-2 shrink-0">
+          {isOpen ? (
+            <div className="flex items-center justify-between w-full px-1">
+              <Link href="/" className="text-white font-semibold tracking-tight text-[15px] hover:text-gray-300">
+                preflight
+              </Link>
+              <div className="flex items-center gap-1">
+                {/* Search button next to sembunyikan sidebar */}
+                <button
+                  type="button"
+                  onClick={() => setShowSearch((v) => !v)}
+                  title="Cari ide"
+                  aria-label="Cari ide"
+                  className={`rounded p-1.5 transition-colors ${
+                    showSearch ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+
+                {/* Sembunyikan sidebar button */}
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  aria-label="Sembunyikan sidebar"
+                  title="Sembunyikan sidebar"
+                  className="rounded p-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  {/* Panel left collapse icon from Figma */}
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="1.5" />
+                    <path d="M9 3v18" strokeWidth="1.5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center w-full">
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-label="Tampilkan sidebar"
+                title="Tampilkan sidebar"
+                className="rounded p-1.5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                {/* Panel left expand icon */}
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="1.5" />
+                  <path d="M9 3v18" strokeWidth="1.5" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation Section */}
+        {isOpen ? (
+          <div className="px-3 pt-3 shrink-0">
+            {/* Collapsible search box when search button is clicked */}
+            {showSearch && (
+              <div className="mb-3 px-1">
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    placeholder="Cari ide..."
+                    className="w-full rounded-md bg-white/10 pl-8 pr-7 py-1.5 text-[12.5px] text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  />
+                  <svg className="absolute left-2.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {filter && (
+                    <button
+                      type="button"
+                      onClick={() => setFilter('')}
+                      className="absolute right-2 text-xs text-gray-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="px-3 pb-2 text-[12px] font-medium uppercase tracking-wider text-gray-400/80">
+              Create
+            </div>
+
+            <div className="space-y-0.5">
+              {/* + New chat */}
+              <Link
+                href="/"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-gray-200 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                <svg className="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New chat</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="pt-3 px-2 flex flex-col items-center gap-1.5 shrink-0">
+            {/* + New chat (Icon only) */}
+            <Link
+              href="/"
+              title="New chat"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <svg className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </Link>
+
+            {/* Search (Icon only) */}
+            <button
+              type="button"
+              onClick={() => {
+                onToggle();
+                setShowSearch(true);
+              }}
+              title="Search"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Plan History List */}
+        {isOpen ? (
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+            {grouped.length === 0 ? (
+              <p className="px-3 py-4 text-center text-[12px] text-gray-400">
+                {filter ? 'Tidak ada rencana cocok.' : 'Belum ada riwayat.'}
+              </p>
+            ) : (
+              grouped.map((group) => (
+                <div key={group.label}>
+                  <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400/70">
+                    {group.label}
+                  </div>
+                  <ul className="space-y-0.5">
+                    {group.items.map((plan) => {
+                      const isActive = plan.id === currentPlanId;
+                      return (
+                        <li key={plan.id} className="group relative">
+                          <Link
+                            href={`/plans/${plan.id}`}
+                            className={`flex items-center justify-between rounded-md px-3 py-1.5 text-[13px] transition-colors ${
+                              isActive
+                                ? 'bg-white/10 font-medium text-white'
+                                : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                            }`}
+                          >
+                            <span className="truncate pr-5">
+                              {plan.title ?? plan.idea.slice(0, 32)}
+                            </span>
+
+                            {plan.status !== 'done' && (
+                              <span className="shrink-0 rounded bg-black/20 px-1 py-0.5 text-[10px] text-orange-400 font-mono">
+                                {plan.status === 'error' ? '!' : '...'}
+                              </span>
+                            )}
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleDelete(e, plan.id)}
+                            disabled={deletingId === plan.id}
+                            title="Hapus rencana"
+                            className="absolute right-1.5 top-1.5 hidden rounded p-1 text-gray-400 hover:text-red-400 group-hover:block transition-colors"
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-2 py-3 flex flex-col items-center gap-1.5">
+            <div className="w-6 h-px bg-white/10 my-1 shrink-0" />
+            {planList.slice(0, 10).map((plan) => {
+              const isActive = plan.id === currentPlanId;
+              return (
+                <Link
+                  key={plan.id}
+                  href={`/plans/${plan.id}`}
+                  title={plan.title ?? plan.idea}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-white/15 text-white'
+                      : 'text-gray-400 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Profile Footer from Figma */}
+        <div className="p-3 mt-auto shrink-0 border-t border-white/5">
+          {isOpen ? (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-white text-[#2b3839] font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                  JA
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-medium text-white truncate">Joshua Adams</div>
+                  <div className="text-[11.5px] text-gray-400 truncate">
+                    {hasByok ? 'BYOK plan' : 'Free plan'}
+                  </div>
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          ) : (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                title={`Joshua Adams (${hasByok ? 'BYOK plan' : 'Free plan'}) - Pengaturan`}
+                className="w-8 h-8 rounded-full bg-white text-[#2b3839] font-bold text-xs flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-white/20 transition-all shadow-xs cursor-pointer"
+              >
+                JA
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}

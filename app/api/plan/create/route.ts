@@ -16,17 +16,26 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const body = await readBody(req, createBody);
   if (body.error) return body.error;
-  const { idea, context, language, questions, answers } = body.data;
+  const { idea, context, language, questions, answers, provider, model } = body.data;
 
   const caller = await getCaller();
-  const { pipeline, byok } = await pipelineFor(caller.sessionId);
+  const { pipeline, byok } = await pipelineFor(caller.sessionId, provider, model);
 
   // Checked before the row is created: refusing here costs nothing, while
   // stopping someone three stages in would waste the quota already spent.
   const limit = await checkPlanLimit(caller, byok);
   if (!limit.allowed) return bad(limit.reason!, 429);
 
-  const planId = await createPlan({ ...caller, idea, context, language, questions, answers });
+  const planId = await createPlan({
+    ...caller,
+    idea,
+    context,
+    language,
+    questions,
+    answers,
+    provider,
+    model,
+  });
 
   try {
     const prd = await withUsage(pipeline, { ...caller, planId, byok }, () =>

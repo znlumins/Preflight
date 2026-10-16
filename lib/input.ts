@@ -33,12 +33,34 @@ const context = z
 
 const language = z.enum(LANGUAGES, { error: 'Bahasa tidak dikenal.' }).default('id');
 
-export const questionsBody = z.object({ idea, context, language });
+const providerChoice = z
+  .enum(['google', 'groq', 'openai', 'anthropic', 'openrouter'])
+  .optional()
+  .nullable()
+  .transform((v) => v || undefined);
+
+const modelChoice = z
+  .string()
+  .trim()
+  .max(100)
+  .optional()
+  .nullable()
+  .transform((v) => v || undefined);
+
+export const questionsBody = z.object({
+  idea,
+  context,
+  language,
+  provider: providerChoice,
+  model: modelChoice,
+});
 
 export const createBody = z.object({
   idea,
   context,
   language,
+  provider: providerChoice,
+  model: modelChoice,
   questions: questionnaireSchema
     .optional()
     .nullable()
@@ -75,7 +97,9 @@ export const undoBody = z.object({
 });
 
 export const keyBody = z.object({
-  provider: z.enum(['google', 'groq'], { error: 'Provider tidak dikenal.' }),
+  provider: z.enum(['google', 'groq', 'openai', 'anthropic', 'openrouter'], {
+    error: 'Provider tidak dikenal.',
+  }),
   apiKey: z
     .string({ error: 'API key kosong.' })
     .trim()

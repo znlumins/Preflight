@@ -23,6 +23,8 @@ export async function createPlan(input: {
   language: 'id' | 'en';
   questions?: Questionnaire;
   answers?: { questionId: string; answer: string }[];
+  provider?: string;
+  model?: string;
 }): Promise<string> {
   const id = nanoid(12);
   await db.insert(plans).values({
@@ -34,6 +36,8 @@ export async function createPlan(input: {
     language: input.language,
     questions: input.questions ?? null,
     answers: input.answers ?? null,
+    provider: input.provider ?? null,
+    model: input.model ?? null,
     status: 'draft',
   });
   return id;
@@ -73,6 +77,19 @@ export async function listPlans(sessionId: string) {
     .from(plans)
     .where(eq(plans.sessionId, sessionId))
     .orderBy(asc(plans.createdAt));
+}
+
+export async function deletePlan(planId: string, sessionId: string) {
+  return db
+    .delete(plans)
+    .where(and(eq(plans.id, planId), eq(plans.sessionId, sessionId)));
+}
+
+export async function renamePlan(planId: string, sessionId: string, title: string) {
+  return db
+    .update(plans)
+    .set({ title: title.trim().slice(0, 100), updatedAt: new Date() })
+    .where(and(eq(plans.id, planId), eq(plans.sessionId, sessionId)));
 }
 
 const touch = () => ({ updatedAt: new Date() });

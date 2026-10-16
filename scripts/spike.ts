@@ -68,6 +68,24 @@ const FREE_TIER = {
     // This, not RPD, is what actually caps throughput here.
     otpm: 1_000,
   },
+  openai: {
+    label: 'OpenAI',
+    fast: { name: 'gpt-4o-mini', rpd: 10000, rpm: 500 },
+    deep: { name: 'gpt-4o', rpd: 5000, rpm: 500 },
+    otpm: 200_000,
+  },
+  anthropic: {
+    label: 'Anthropic Claude',
+    fast: { name: 'claude-3-5-haiku', rpd: 10000, rpm: 500 },
+    deep: { name: 'claude-3-7-sonnet', rpd: 5000, rpm: 500 },
+    otpm: 100_000,
+  },
+  openrouter: {
+    label: 'OpenRouter (Universal)',
+    fast: { name: 'deepseek-chat', rpd: 10000, rpm: 500 },
+    deep: { name: 'claude-3.7-sonnet', rpd: 5000, rpm: 500 },
+    otpm: 100_000,
+  },
 } as const;
 
 const pad = (s: string, n: number) => s.padEnd(n).slice(0, n);
@@ -103,9 +121,12 @@ async function main() {
   console.log(`language : ${language}`);
   console.log(`idea     : ${idea.slice(0, 80)}${idea.length > 80 ? '...' : ''}`);
 
+  const model = arg('model', '');
+  if (model) console.log(`model    : ${model}`);
+
   const singleTier = process.argv.includes('--single-tier');
   if (singleTier) console.log('mode     : single-tier (semua tahap di model fast)');
-  const pipeline = new Pipeline({ provider }, { singleTier });
+  const pipeline = new Pipeline({ provider, model: model || undefined }, { singleTier });
   const started = Date.now();
 
   // Comparing two runs is only meaningful when their inputs match. Stage 1

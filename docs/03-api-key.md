@@ -45,13 +45,35 @@ Buka **`/pengaturan`**.
 
 Sekitar 500 request/hari — cukup untuk **~70 rencana per hari untukmu sendiri**.
 
+### Anthropic Claude — reasoning dan PRD kelas atas
+
+1. Buka [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+2. Buat API key (diawali `sk-ant-…`)
+3. Tempel di `/pengaturan`
+
+Menggunakan Claude 3.7 Sonnet untuk PRD dan 3.5 Haiku untuk task. Output sangat terstruktur, tajam, dan minim boilerplate.
+
+### OpenAI — standar industri
+
+1. Buka [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Buat API key (diawali `sk-…`)
+3. Tempel di `/pengaturan`
+
+Menggunakan GPT-4o untuk PRD dan GPT-4o-mini untuk task & spesifikasi.
+
+### OpenRouter — akses universal 100+ model
+
+1. Buka [openrouter.ai/keys](https://openrouter.ai/keys)
+2. Buat API key (diawali `sk-or-…`)
+3. Tempel di `/pengaturan`
+
+Akses universal ke berbagai model mutakhir: DeepSeek R1/V3, Meta Llama 3.3, Qwen 2.5, dan lainnya dengan satu key.
+
 ### Groq — bisa, tapi lambat untuk beban ini
 
 Ada di [console.groq.com/keys](https://console.groq.com/keys), juga gratis.
 
 Tapi jujur saja: tier gratis Groq membatasi **1.000 output token per menit**. Satu rencana butuh ~17.000 output token, jadi satu rencana makan sekitar **17 menit** di sana. Angka "1.000 request/hari" yang sering dikutip tidak pernah jadi batas yang mengikat untuk beban kerja ini.
-
-Groq didukung, tapi bukan pilihan pertama.
 
 ---
 

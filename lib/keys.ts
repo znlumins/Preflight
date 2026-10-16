@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from './db';
 import { apiKeys } from './db/schema';
 import { decrypt, encrypt, hintOf } from './crypto';
@@ -7,19 +7,25 @@ import type { Credentials, ProviderId } from './ai/provider';
 /**
  * Bring-your-own-key.
  *
- * The shared pool key is a trial, not the product: one free Google key covers
- * roughly 71 plans a day for everyone combined. A user's own key moves that
- * ceiling onto their own quota, which is the only version of "free" that
- * survives more than a handful of users.
+ * Users can save keys for multiple providers (Google, Anthropic, OpenAI,
+ * OpenRouter, Groq). Each provider has its own entry per session.
  */
 
-export type KeyStatus = { provider: ProviderId; hint: string; savedAt: string } | null;
+export type SavedKey = { provider: ProviderId; hint: string; savedAt: string };
+export type KeyStatusMap = Partial<Record<ProviderId, SavedKey>>;
 
-/** Safe to send to the browser: provider and four characters, never the key. */
-export async function keyStatus(sessionId: string): Promise<KeyStatus> {
-  const [row] = await db.select().from(apiKeys).where(eq(apiKeys.sessionId, sessionId)).limit(1);
-  if (!row) return null;
-  return { provider: row.provider, hint: row.hint, savedAt: row.createdAt.toISOString() };
+/** Safe to send to the browser: maps provider -> { hint, savedAt } */
+export async function keyStatus(sessionId: string): Promise<KeyStatusMap> {
+  const rows = await db.select().from(apiKeys).where(eq(apiKeys.sessionId, sessionId));
+  const map: KeyStatusMap = {};
+  for (const row of rows) {
+    map[row.provider as ProviderId] = {
+      provider: row.provider as ProviderId,
+      hint: row.hint,
+      savedAt: row.createdAt.toISOString(),
+    };
+  }
+  return map;
 }
 
 export async function saveKey(sessionId: string, provider: ProviderId, apiKey: string) {
@@ -33,9 +39,8 @@ export async function saveKey(sessionId: string, provider: ProviderId, apiKey: s
       hint: hintOf(trimmed),
     })
     .onConflictDoUpdate({
-      target: apiKeys.sessionId,
+      target: [apiKeys.sessionId, apiKeys.provider],
       set: {
-        provider,
         ciphertext: encrypt(trimmed),
         hint: hintOf(trimmed),
         createdAt: new Date(),
@@ -44,36 +49,76 @@ export async function saveKey(sessionId: string, provider: ProviderId, apiKey: s
     });
 }
 
-export async function deleteKey(sessionId: string) {
-  await db.delete(apiKeys).where(eq(apiKeys.sessionId, sessionId));
+export async function deleteKey(sessionId: string, provider?: ProviderId) {
+  if (provider) {
+    await db
+      .delete(apiKeys)
+      .where(and(eq(apiKeys.sessionId, sessionId), eq(apiKeys.provider, provider)));
+  } else {
+    await db.delete(apiKeys).where(eq(apiKeys.sessionId, sessionId));
+  }
 }
 
 /**
- * The credentials a request should run on: the user's key when they have saved
- * one, the shared pool otherwise.
- *
- * `byok` also decides model tiering. A pool request is single-tier because the
- * full Flash models allow only ~20 free requests a day; someone spending their
- * own quota gets the better model for the PRD.
+ * The credentials a request should run on:
+ * If requestedProvider is specified, checks that provider's saved key.
+ * Otherwise falls back to any saved key or the shared pool.
  */
 export async function credentialsFor(
   sessionId: string,
+  requestedProvider?: ProviderId,
+  requestedModel?: string,
 ): Promise<{ creds: Credentials; byok: boolean }> {
-  const [row] = await db.select().from(apiKeys).where(eq(apiKeys.sessionId, sessionId)).limit(1);
-  if (!row) return { creds: { provider: 'google' }, byok: false };
+  if (requestedProvider) {
+    const [row] = await db
+      .select()
+      .from(apiKeys)
+      .where(and(eq(apiKeys.sessionId, sessionId), eq(apiKeys.provider, requestedProvider)))
+      .limit(1);
 
-  // Best-effort: a stale row (key rotated, ENCRYPTION_KEY changed) must not
-  // take the whole request down, so fall back to the pool.
+    if (row) {
+      try {
+        const apiKey = decrypt(row.ciphertext);
+        void db
+          .update(apiKeys)
+          .set({ lastUsedAt: new Date() })
+          .where(and(eq(apiKeys.sessionId, sessionId), eq(apiKeys.provider, requestedProvider)))
+          .catch(() => {});
+        return {
+          creds: { provider: requestedProvider, apiKey, model: requestedModel },
+          byok: true,
+        };
+      } catch {
+        // Stale key, fall back to pool
+      }
+    }
+
+    return {
+      creds: { provider: requestedProvider, model: requestedModel },
+      byok: false,
+    };
+  }
+
+  // No specific provider requested: check if any key exists
+  const [row] = await db
+    .select()
+    .from(apiKeys)
+    .where(eq(apiKeys.sessionId, sessionId))
+    .orderBy(desc(apiKeys.lastUsedAt), desc(apiKeys.createdAt))
+    .limit(1);
+
+  if (!row) {
+    return { creds: { provider: 'google', model: requestedModel }, byok: false };
+  }
+
   try {
     const apiKey = decrypt(row.ciphertext);
-    void db
-      .update(apiKeys)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(apiKeys.sessionId, sessionId))
-      .catch(() => {});
-    return { creds: { provider: row.provider, apiKey }, byok: true };
+    return {
+      creds: { provider: row.provider as ProviderId, apiKey, model: requestedModel },
+      byok: true,
+    };
   } catch {
-    return { creds: { provider: 'google' }, byok: false };
+    return { creds: { provider: 'google', model: requestedModel }, byok: false };
   }
 }
 
@@ -83,14 +128,37 @@ export async function verifyKey(provider: ProviderId, apiKey: string): Promise<s
   if (!key) return 'API key kosong.';
 
   try {
-    const res =
-      provider === 'google'
-        ? await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models?pageSize=1&key=${encodeURIComponent(key)}`,
-          )
-        : await fetch('https://api.groq.com/openai/v1/models', {
-            headers: { Authorization: `Bearer ${key}` },
-          });
+    let res: Response;
+    switch (provider) {
+      case 'google':
+        res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?pageSize=1&key=${encodeURIComponent(key)}`,
+        );
+        break;
+      case 'groq':
+        res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        break;
+      case 'openai':
+        res = await fetch('https://api.openai.com/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        break;
+      case 'anthropic':
+        res = await fetch('https://api.anthropic.com/v1/models', {
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+          },
+        });
+        break;
+      case 'openrouter':
+        res = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        break;
+    }
 
     if (res.ok) return null;
     if (res.status === 400 || res.status === 401 || res.status === 403) {

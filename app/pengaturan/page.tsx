@@ -30,9 +30,8 @@ export default async function SettingsPage() {
           API key kamu sendiri
         </h1>
         <p className="mt-4 max-w-[62ch] text-[16.5px] leading-relaxed text-muted">
-          Preflight jalan di atas model AI gratis. Kuota bersama yang dipakai semua pengunjung
-          habis sekitar 70 rencana per hari. Pasang key kamu sendiri — juga gratis, tanpa kartu
-          kredit — dan batas itu jadi milik kamu sendiri.
+          Preflight mendukung berbagai provider AI: Google AI Studio, Anthropic Claude, OpenAI, OpenRouter, dan Groq.
+          Pasang API key kamu sendiri untuk batas kuota pribadi dan model yang lebih powerful.
         </p>
 
         <div className="mt-10">

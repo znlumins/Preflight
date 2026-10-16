@@ -155,10 +155,11 @@ npm run build                          # build produksi
 npm run typecheck                      # tsc --noEmit
 npm run lint
 
+npm run cli                            # susun rencana interaktif langsung di terminal
 npm run spike                          # ukur biaya pipeline, tulis ke out/
+npm run spike -- --provider anthropic  # jalankan via CLI dengan provider pilihan
 npm run spike -- --no-interview        # jawaban tetap, buat A/B prompt
 npm run spike -- --single-tier         # konfigurasi kuota bersama
-npm run spike -- --provider groq
 
 npm run db:push                        # terapkan skema
 npm run db:studio                      # Drizzle Studio
@@ -185,7 +186,7 @@ Generate `ENCRYPTION_KEY` baru untuk produksi. Kalau nilai itu berubah setelah a
 
 Jalan di produksi: [preflight.luminszn.my.id](https://preflight.luminszn.my.id).
 
-Agent coding bisa menarik task langsung lewat MCP: ambil task berikutnya, tandai selesai, cek progres. Claude Code dan Cursor sudah didukung, caranya di [5. Sambungkan agent](docs/05-agent.md).
+Agent coding bisa menarik task langsung lewat MCP: ambil task berikutnya, tandai selesai, cek progres. Claude Code, Cursor, Antigravity, Windsurf, dan VS Code (Roo Code / Cline) sudah didukung, caranya di [5. Sambungkan agent](docs/05-agent.md).
 
 Yang belum ada:
 

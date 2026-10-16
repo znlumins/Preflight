@@ -31,8 +31,13 @@ export async function PUT(req: Request) {
   return NextResponse.json(await keyStatus(sessionId));
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   const sessionId = await peekSessionId();
-  if (sessionId) await deleteKey(sessionId);
-  return NextResponse.json({ ok: true });
+  if (sessionId) {
+    const url = new URL(req.url);
+    const provider = url.searchParams.get('provider') as import('@/lib/ai/provider').ProviderId | null;
+    await deleteKey(sessionId, provider ?? undefined);
+    return NextResponse.json(await keyStatus(sessionId));
+  }
+  return NextResponse.json({});
 }

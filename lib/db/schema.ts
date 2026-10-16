@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -35,6 +36,8 @@ export const plans = pgTable(
     language: text('language', { enum: ['id', 'en'] })
       .notNull()
       .default('id'),
+    provider: text('provider'),
+    model: text('model'),
 
     /** How far generation got. The client drives the next stage from this. */
     status: text('status', {
@@ -141,16 +144,22 @@ export const tasks = pgTable(
  * browser — only the last four characters, so a person can tell which key is
  * saved without the value being recoverable from the page.
  */
-export const apiKeys = pgTable('api_keys', {
-  sessionId: text('session_id').primaryKey(),
-  provider: text('provider', { enum: ['google', 'groq'] }).notNull(),
-  /** AES-256-GCM, base64, with iv and auth tag packed in. */
-  ciphertext: text('ciphertext').notNull(),
-  hint: text('hint').notNull(),
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    sessionId: text('session_id').notNull(),
+    provider: text('provider', {
+      enum: ['google', 'groq', 'openai', 'anthropic', 'openrouter'],
+    }).notNull(),
+    /** AES-256-GCM, base64, with iv and auth tag packed in. */
+    ciphertext: text('ciphertext').notNull(),
+    hint: text('hint').notNull(),
 
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-});
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.provider] })],
+);
 
 /**
  * Tokens that let a coding agent reach this session over MCP.

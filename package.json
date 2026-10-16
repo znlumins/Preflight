@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "spike": "tsx scripts/spike.ts",
+    "cli": "tsx scripts/cli.ts",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:push:prod": "tsx scripts/with-db.ts prod drizzle-kit push",
@@ -16,9 +17,12 @@
     "db:studio:prod": "tsx scripts/with-db.ts prod drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.81",
     "@ai-sdk/google": "^4.0.74",
     "@ai-sdk/groq": "^4.0.44",
+    "@ai-sdk/openai": "^4.0.95",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@paper-design/shaders-react": "^0.0.81",
     "@vercel/analytics": "^2.0.1",
     "ai": "^7.0.105",
     "dotenv": "^18.0.0",

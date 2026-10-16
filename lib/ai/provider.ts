@@ -1,9 +1,14 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModel } from 'ai';
 
 /**
  * Provider layer.
+ *
+ * Universal multi-provider engine supporting Google AI Studio, Groq,
+ * OpenAI, Anthropic Claude, and OpenRouter.
  *
  * Two rules drive this file:
  *  1. Every model is reachable with a caller-supplied key (BYOK). The server key
@@ -13,7 +18,7 @@ import type { LanguageModel } from 'ai';
  *     tier changes is then a one-line edit here.
  */
 
-export type ProviderId = 'google' | 'groq';
+export type ProviderId = 'google' | 'groq' | 'openai' | 'anthropic' | 'openrouter';
 
 /**
  * `fast` runs the high-volume stages (questions, features, tasks, revisions).
@@ -23,30 +28,34 @@ export type ModelTier = 'fast' | 'deep';
 
 /**
  * Ordered fallback chain per tier. Free tiers return 503 "high demand" under
- * load often enough that a single model id is not a working configuration —
- * the first spike run died on exactly that. Retrying the same overloaded model
- * does not help; moving to a different one does.
+ * load often enough that a single model id is not a working configuration.
+ * Retrying the same overloaded model does not help; moving to a different one does.
  */
 const MODELS: Record<ProviderId, Record<ModelTier, readonly string[]>> = {
-  // Verified callable with `npx tsx scripts/list-models.ts`. Note that the
-  // listing endpoint still advertises models that are closed to new keys, so
-  // prefer recent ids and keep the `-latest` alias first.
-  // Measured, not assumed: full Flash models allow only ~20 free requests a day
-  // ("Quota exceeded ... limit: 20, model: gemini-3.8-flash"), while Flash-Lite
-  // allows ~500. So the deep chain must end at Flash-Lite — falling back from
-  // one 20/day model to another 20/day model fails for the same reason twice.
-  // On a free key the PRD gets one attempt at the better model, then degrades.
+  // Google AI Studio
   google: {
     fast: ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
     deep: ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-flash-lite-latest'],
   },
-  // Groq retired the whole Llama line; these three are what the key can reach.
-  // Both tiers lead with 120b: the 20b model cannot hold the task schema (it
-  // returns unparseable JSON), and Groq's quota is per-account here rather than
-  // per-model, so the smaller model buys no extra headroom.
+  // Groq high-speed inference
   groq: {
     fast: ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'],
     deep: ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'],
+  },
+  // OpenAI flagship models
+  openai: {
+    fast: ['gpt-4o-mini', 'gpt-4o'],
+    deep: ['gpt-4o', 'o3-mini', 'gpt-4o-mini'],
+  },
+  // Anthropic Claude
+  anthropic: {
+    fast: ['claude-3-5-haiku-latest', 'claude-3-5-haiku-20241022'],
+    deep: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
+  },
+  // OpenRouter (Universal gateway to 100+ models)
+  openrouter: {
+    fast: ['deepseek/deepseek-chat', 'meta-llama/llama-3.3-70b-instruct', 'google/gemini-2.5-flash'],
+    deep: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1'],
   },
 };
 
@@ -54,12 +63,23 @@ export type Credentials = {
   provider: ProviderId;
   /** BYOK key. Falls back to the server key when omitted. */
   apiKey?: string;
+  /** Custom model override. When set, overrides the tier's default chain. */
+  model?: string;
 };
 
-function serverKey(provider: ProviderId): string | undefined {
-  return provider === 'google'
-    ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-    : process.env.GROQ_API_KEY;
+export function serverKey(provider: ProviderId): string | undefined {
+  switch (provider) {
+    case 'google':
+      return process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    case 'groq':
+      return process.env.GROQ_API_KEY;
+    case 'openai':
+      return process.env.OPENAI_API_KEY;
+    case 'anthropic':
+      return process.env.ANTHROPIC_API_KEY;
+    case 'openrouter':
+      return process.env.OPENROUTER_API_KEY;
+  }
 }
 
 export type ResolvedModel = { id: string; model: LanguageModel };
@@ -68,22 +88,146 @@ export type ResolvedModel = { id: string; model: LanguageModel };
 export function resolveChain(creds: Credentials, tier: ModelTier): ResolvedModel[] {
   const apiKey = creds.apiKey ?? serverKey(creds.provider);
   if (!apiKey) {
+    const envMap: Record<ProviderId, string> = {
+      google: 'GOOGLE_GENERATIVE_AI_API_KEY',
+      groq: 'GROQ_API_KEY',
+      openai: 'OPENAI_API_KEY',
+      anthropic: 'ANTHROPIC_API_KEY',
+      openrouter: 'OPENROUTER_API_KEY',
+    };
     throw new Error(
-      `No API key for provider "${creds.provider}". Set ${
-        creds.provider === 'google' ? 'GOOGLE_GENERATIVE_AI_API_KEY' : 'GROQ_API_KEY'
-      } in .env.local, or pass a BYOK key.`,
+      `No API key for provider "${creds.provider}". Set ${envMap[creds.provider]} in .env.local, or pass a BYOK key.`,
     );
   }
 
-  const factory =
-    creds.provider === 'google'
-      ? createGoogleGenerativeAI({ apiKey })
-      : createGroq({ apiKey });
+  let factory: (modelId: string) => LanguageModel;
+  switch (creds.provider) {
+    case 'google':
+      factory = createGoogleGenerativeAI({ apiKey });
+      break;
+    case 'groq':
+      factory = createGroq({ apiKey });
+      break;
+    case 'openai':
+      factory = createOpenAI({ apiKey });
+      break;
+    case 'anthropic':
+      factory = createAnthropic({ apiKey });
+      break;
+    case 'openrouter':
+      factory = createOpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
+        apiKey,
+      });
+      break;
+  }
+
+  // Caller specifically asked for a custom model id
+  if (creds.model) {
+    return [
+      {
+        id: `${creds.provider}:${creds.model}`,
+        model: factory(creds.model),
+      },
+    ];
+  }
 
   return MODELS[creds.provider][tier].map((id) => ({
     id: `${creds.provider}:${id}`,
     model: factory(id),
   }));
+}
+
+export type DetectedModel = {
+  id: string;
+  name?: string;
+  contextWindow?: number;
+};
+
+/**
+ * Auto-detects models actually callable with the given API key.
+ */
+export async function listProviderModels(
+  provider: ProviderId,
+  apiKey?: string,
+): Promise<DetectedModel[]> {
+  const key = apiKey ?? serverKey(provider);
+  if (!key) return [];
+
+  try {
+    switch (provider) {
+      case 'google': {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`,
+        );
+        if (!res.ok) return [];
+        const { models } = (await res.json()) as {
+          models: { name: string; displayName?: string; supportedGenerationMethods?: string[]; inputTokenLimit?: number }[];
+        };
+        return (models ?? [])
+          .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+          .map((m) => ({
+            id: m.name.replace('models/', ''),
+            name: m.displayName,
+            contextWindow: m.inputTokenLimit,
+          }))
+          .filter((m) => /^gemini-(\d|flash|pro)/.test(m.id));
+      }
+      case 'groq': {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (!res.ok) return [];
+        const { data } = (await res.json()) as { data: { id: string; context_window?: number; active?: boolean }[] };
+        return (data ?? [])
+          .filter((m) => m.active !== false && !/whisper|guard/i.test(m.id))
+          .map((m) => ({ id: m.id, contextWindow: m.context_window }));
+      }
+      case 'openai': {
+        const res = await fetch('https://api.openai.com/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (!res.ok) return [];
+        const { data } = (await res.json()) as { data: { id: string }[] };
+        return (data ?? [])
+          .filter((m) => /^(gpt-4|gpt-3\.5|o1|o3)/i.test(m.id) && !/realtime|audio|transcribe/i.test(m.id))
+          .map((m) => ({ id: m.id }))
+          .sort((a, b) => a.id.localeCompare(b.id));
+      }
+      case 'openrouter': {
+        const res = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (!res.ok) return [];
+        const { data } = (await res.json()) as {
+          data: { id: string; name?: string; context_length?: number }[];
+        };
+        return (data ?? [])
+          .slice(0, 100)
+          .map((m) => ({ id: m.id, name: m.name, contextWindow: m.context_length }));
+      }
+      case 'anthropic': {
+        const res = await fetch('https://api.anthropic.com/v1/models', {
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+          },
+        });
+        if (!res.ok) {
+          // Anthropic /v1/models endpoint might require specific permissions; fallback to known working set
+          return [
+            { id: 'claude-3-7-sonnet-latest', name: 'Claude 3.7 Sonnet (Latest)' },
+            { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet (Latest)' },
+            { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku (Latest)' },
+          ];
+        }
+        const { data } = (await res.json()) as { data: { id: string; display_name?: string }[] };
+        return (data ?? []).map((m) => ({ id: m.id, name: m.display_name }));
+      }
+    }
+  } catch {
+    return [];
+  }
 }
 
 /**

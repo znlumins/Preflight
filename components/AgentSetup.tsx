@@ -13,30 +13,85 @@ import { useEffect, useRef, useState } from 'react';
 
 type Status = { hint: string; createdAt: string; lastUsedAt: string | null } | null;
 
+type AgentType = 'claude' | 'cursor' | 'antigravity' | 'windsurf' | 'vscode';
+
+const AGENTS: { id: AgentType; name: string; file: string; desc: string }[] = [
+  {
+    id: 'claude',
+    name: 'Claude Code',
+    file: '.mcp.json di root proyek, atau ~/.claude.json',
+    desc: 'Jalankan `claude` di terminal, agent langsung mendeteksi tool Preflight.',
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    file: '.cursor/mcp.json atau Cursor Settings → Features → MCP',
+    desc: 'Ketik di Composer: "kerjakan rencana Preflight-ku".',
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity',
+    file: 'MCP settings / mcp_config.json',
+    desc: 'Terintegrasi langsung sebagai universal MCP server.',
+  },
+  {
+    id: 'windsurf',
+    name: 'Windsurf (Cascade)',
+    file: '~/.codeium/windsurf/mcp_config.json',
+    desc: 'Cascade akan otomatis menggunakan tools `preflight_*`.',
+  },
+  {
+    id: 'vscode',
+    name: 'VS Code / Roo Code / Cline',
+    file: 'cline_mcp_settings.json atau .vscode/mcp.json',
+    desc: 'Dukungan MCP standar untuk ekstensi AI agent di VS Code.',
+  },
+];
+
 export function AgentSetup({ initial }: { initial: Status }) {
   const [status, setStatus] = useState<Status>(initial);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<AgentType>('claude');
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  const bearerToken = token ?? 'pf_…';
 
-  // The token only exists in this page's memory, right after it is issued.
-  const config = JSON.stringify(
-    {
-      mcpServers: {
-        preflight: {
-          url: `${origin}/api/mcp/mcp`,
-          headers: { Authorization: `Bearer ${token ?? 'pf_…'}` },
+  function getConfig(agent: AgentType) {
+    if (agent === 'windsurf') {
+      return JSON.stringify(
+        {
+          mcpServers: {
+            preflight: {
+              serverUrl: `${origin}/api/mcp/mcp`,
+              headers: { Authorization: `Bearer ${bearerToken}` },
+            },
+          },
+        },
+        null,
+        2,
+      );
+    }
+    return JSON.stringify(
+      {
+        mcpServers: {
+          preflight: {
+            url: `${origin}/api/mcp/mcp`,
+            headers: { Authorization: `Bearer ${bearerToken}` },
+          },
         },
       },
-    },
-    null,
-    2,
-  );
+      null,
+      2,
+    );
+  }
+
+  const currentConfig = getConfig(activeAgent);
+  const selectedAgent = AGENTS.find((a) => a.id === activeAgent)!;
 
   async function issue() {
     setBusy(true);
@@ -63,7 +118,7 @@ export function AgentSetup({ initial }: { initial: Status }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(config);
+      await navigator.clipboard.writeText(currentConfig);
       setCopied(true);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 2000);
@@ -80,8 +135,9 @@ export function AgentSetup({ initial }: { initial: Status }) {
       <p className="mt-2 max-w-[62ch] text-[15.5px] leading-relaxed text-muted">
         Daripada menyalin prompt satu per satu, biarkan agent-nya yang mengambil sendiri. Setelah
         tersambung, kamu cukup bilang <em className="not-italic text-ink">&ldquo;kerjakan rencana
-        Preflight-ku&rdquo;</em> — agent ambil task, kerjakan, tandai selesai, lanjut sendiri.
-        Jalan di Claude Code dan Cursor lewat MCP.
+        Preflight-ku&rdquo;</em> — agent ambil task, kerjakan, tandai selesai, dan lanjut sendiri.
+        Mendukung protokol standar MCP untuk berbagai agent favoritmu: Claude Code, Cursor, Antigravity,
+        Windsurf, Roo Code, dan lainnya.
       </p>
 
       {status && !token && (
@@ -101,15 +157,38 @@ export function AgentSetup({ initial }: { initial: Status }) {
       )}
 
       {token && (
-        <div className="mt-5">
+        <div className="mt-6">
           <p className="max-w-[62ch] border-l-2 border-warn pl-4 text-[14.5px] leading-relaxed text-warn">
             Token ini hanya tampil sekali. Salin sekarang — ini kredensial, jadi perlakukan seperti
             password dan jangan taruh di repo publik.
           </p>
 
+          <div className="mt-5">
+            <label className="text-[14px] font-medium text-ink">Pilih editor / agent kamu:</label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {AGENTS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setActiveAgent(a.id)}
+                  className={`rounded-[3px] px-3 py-1.5 text-[13.5px] font-medium transition-colors ${
+                    activeAgent === a.id
+                      ? 'bg-ink text-paper'
+                      : 'border border-rule bg-paper text-muted hover:border-faint hover:text-ink'
+                  }`}
+                >
+                  {a.name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[13.5px] text-muted">
+              {selectedAgent.desc} Simpan di: <code className="font-mono text-ink">{selectedAgent.file}</code>
+            </p>
+          </div>
+
           <div className="screen mt-4 rounded-[3px] bg-screen px-4 py-3.5">
             <pre className="overflow-x-auto font-mono text-[12.5px] leading-[1.7] text-screen-ink">
-              {config}
+              {currentConfig}
             </pre>
           </div>
 
@@ -119,12 +198,8 @@ export function AgentSetup({ initial }: { initial: Status }) {
               onClick={copy}
               className="rounded-[3px] bg-ink px-4 py-2 text-[14px] font-medium text-paper transition-opacity hover:opacity-90"
             >
-              {copied ? 'Tersalin' : 'Salin konfigurasi'}
+              {copied ? 'Tersalin' : `Salin konfigurasi ${selectedAgent.name}`}
             </button>
-            <span className="text-[13.5px] text-faint">
-              Tempel ke <code className="font-mono">.mcp.json</code> (Claude Code) atau pengaturan
-              MCP di Cursor.
-            </span>
           </div>
         </div>
       )}
