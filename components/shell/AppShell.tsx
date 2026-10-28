@@ -88,6 +88,8 @@ export function AppShell({
           alert(
             'Konfigurasi Google OAuth belum diisi di .env.local (GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET).',
           );
+        } else if (authErr === 'database_error') {
+          alert('Gagal menghubungkan ke database produksi (Supabase sedang paused / dijeda). Silakan aktifkan / unpause database di dashboard Supabase.');
         } else {
           alert(`Gagal masuk dengan Google (${authErr}). Silakan coba lagi.`);
         }

@@ -85,22 +85,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?auth_error=profile_incomplete', origin));
   }
 
-  // Upsert user in database
-  const user = await upsertGoogleUser({
-    googleId: profile.sub,
-    email: profile.email,
-    name: profile.name || profile.email.split('@')[0],
-    avatarUrl: profile.picture || null,
-  });
+  try {
+    // Upsert user in database
+    const user = await upsertGoogleUser({
+      googleId: profile.sub,
+      email: profile.email,
+      name: profile.name || profile.email.split('@')[0],
+      avatarUrl: profile.picture || null,
+    });
 
-  // Automatically migrate / link anonymous plans created with current session cookie
-  const sessionId = await peekSessionId();
-  if (sessionId) {
-    await linkAnonymousPlansToUser(sessionId, user.id);
+    // Automatically migrate / link anonymous plans created with current session cookie
+    const sessionId = await peekSessionId();
+    if (sessionId) {
+      await linkAnonymousPlansToUser(sessionId, user.id);
+    }
+
+    // Create login session and set cookie
+    await createAuthSession(user.id);
+
+    return NextResponse.redirect(new URL('/?auth_success=1', origin));
+  } catch (dbErr) {
+    console.error('[Google OAuth] Database error:', dbErr);
+    return NextResponse.redirect(new URL('/?auth_error=database_error', origin));
   }
-
-  // Create login session and set cookie
-  await createAuthSession(user.id);
-
-  return NextResponse.redirect(new URL('/?auth_success=1', origin));
 }
