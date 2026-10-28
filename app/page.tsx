@@ -4,6 +4,7 @@ import { IdeaFlow } from '@/components/IdeaFlow';
 import { AppShell } from '@/components/shell/AppShell';
 import { pickExampleIdea } from '@/lib/example-ideas';
 import { poolUsage } from '@/lib/limits';
+import { getAuthUser } from '@/lib/auth';
 import { keyStatus } from '@/lib/keys';
 import { listPlans } from '@/lib/plans';
 import { clientIpHash, peekSessionId } from '@/lib/session';
@@ -37,8 +38,8 @@ export default async function Home() {
   const sidebarCookie = cookieStore.get('preflight_sidebar_open')?.value;
   const initialSidebarOpen = sidebarCookie !== undefined ? sidebarCookie === 'true' : true;
 
-  const sessionId = await peekSessionId();
-  const allPlans = sessionId ? await listPlans(sessionId) : [];
+  const [sessionId, authUser] = await Promise.all([peekSessionId(), getAuthUser()]);
+  const allPlans = sessionId || authUser ? await listPlans(sessionId ?? '', authUser?.id) : [];
   const keys = sessionId ? await keyStatus(sessionId) : {};
   const hasByok = Object.keys(keys).length > 0;
   const usage = sessionId && !hasByok ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
@@ -48,6 +49,7 @@ export default async function Home() {
       plans={allPlans}
       savedKeys={keys}
       usage={usage}
+      user={authUser}
       stage="ide"
       initialSidebarOpen={initialSidebarOpen}
     >

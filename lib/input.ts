@@ -47,12 +47,20 @@ const modelChoice = z
   .nullable()
   .transform((v) => v || undefined);
 
+const images = z
+  .array(z.string().max(8_000_000))
+  .max(4)
+  .optional()
+  .nullable()
+  .transform((v) => (v && v.length > 0 ? v : undefined));
+
 export const questionsBody = z.object({
   idea,
   context,
   language,
   provider: providerChoice,
   model: modelChoice,
+  images,
 });
 
 export const createBody = z.object({
@@ -61,6 +69,7 @@ export const createBody = z.object({
   language,
   provider: providerChoice,
   model: modelChoice,
+  images,
   questions: questionnaireSchema
     .optional()
     .nullable()

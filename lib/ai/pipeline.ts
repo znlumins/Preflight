@@ -46,6 +46,7 @@ export type PlanInput = {
   /** Free-text extras: experience level, budget, deadline, must-have features. */
   context?: string;
   answers?: Answer[];
+  images?: string[];
 };
 
 /** Features per spec call and per task call. Tuned against context limits, not vibes. */
@@ -114,13 +115,38 @@ export class Pipeline {
   /* -------------------------------------------------------------- stage 1 */
 
   async questions(input: PlanInput): Promise<Questionnaire> {
-    const { object } = await this.call<Questionnaire>('questions', 'fast', {
+    const promptText = `Product idea:\n${input.idea}\n\n${
+      input.context ? `Extra context:\n${input.context}` : 'No extra context given.'
+    }${
+      input.images && input.images.length > 0
+        ? '\n\nNote: The user attached reference screenshot(s)/wireframe(s). Carefully examine the visual components, layout, user flows, and elements in the image(s) when preparing the questions.'
+        : ''
+    }`;
+
+    const opts: Record<string, unknown> = {
       schema: questionnaireSchema,
-      system: systemQuestions(input.language),
-      prompt: `Product idea:\n${input.idea}\n\n${
-        input.context ? `Extra context:\n${input.context}` : 'No extra context given.'
-      }`,
-    });
+    };
+
+    if (input.images && input.images.length > 0) {
+      opts.messages = [
+        { role: 'system', content: systemQuestions(input.language) },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            ...input.images.map((img) => ({
+              type: 'image' as const,
+              image: img,
+            })),
+          ],
+        },
+      ];
+    } else {
+      opts.system = systemQuestions(input.language);
+      opts.prompt = promptText;
+    }
+
+    const { object } = await this.call<Questionnaire>('questions', 'fast', opts);
     return object;
   }
 
@@ -131,13 +157,38 @@ export class Pipeline {
       ? input.answers.map((a) => `- ${a.questionId}: ${a.answer}`).join('\n')
       : 'The user skipped the questionnaire. Choose sensible defaults.';
 
-    const { object } = await this.call<Prd>('prd', 'deep', {
+    const promptText = `Product idea:\n${input.idea}\n\nExtra context:\n${
+      input.context ?? 'none'
+    }\n\nInterview answers:\n${answers}${
+      input.images && input.images.length > 0
+        ? '\n\nNote: The user attached reference screenshot(s)/wireframe(s). Carefully analyze the visual design, screen layout, components, and user flows depicted in the image(s) and integrate them into this PRD.'
+        : ''
+    }`;
+
+    const opts: Record<string, unknown> = {
       schema: prdSchema,
-      system: systemPrd(input.language),
-      prompt: `Product idea:\n${input.idea}\n\nExtra context:\n${
-        input.context ?? 'none'
-      }\n\nInterview answers:\n${answers}`,
-    });
+    };
+
+    if (input.images && input.images.length > 0) {
+      opts.messages = [
+        { role: 'system', content: systemPrd(input.language) },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            ...input.images.map((img) => ({
+              type: 'image' as const,
+              image: img,
+            })),
+          ],
+        },
+      ];
+    } else {
+      opts.system = systemPrd(input.language);
+      opts.prompt = promptText;
+    }
+
+    const { object } = await this.call<Prd>('prd', 'deep', opts);
     return object;
   }
 

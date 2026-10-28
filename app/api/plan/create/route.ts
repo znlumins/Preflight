@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { bad, errorMessage, pipelineFor, readBody, withUsage } from '@/lib/api';
+import { getAuthUser } from '@/lib/auth';
 import { createBody } from '@/lib/input';
 import { createPlan, markError, savePrd } from '@/lib/plans';
 import { checkPlanLimit } from '@/lib/limits';
@@ -16,18 +17,22 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const body = await readBody(req, createBody);
   if (body.error) return body.error;
-  const { idea, context, language, questions, answers, provider, model } = body.data;
+  const { idea, context, language, questions, answers, provider, model, images } = body.data;
 
   const caller = await getCaller();
   const { pipeline, byok } = await pipelineFor(caller.sessionId, provider, model);
 
   // Checked before the row is created: refusing here costs nothing, while
   // stopping someone three stages in would waste the quota already spent.
-  const limit = await checkPlanLimit(caller, byok);
+  const [limit, authUser] = await Promise.all([
+    checkPlanLimit(caller, byok),
+    getAuthUser(),
+  ]);
   if (!limit.allowed) return bad(limit.reason!, 429);
 
   const planId = await createPlan({
     ...caller,
+    userId: authUser?.id,
     idea,
     context,
     language,
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
 
   try {
     const prd = await withUsage(pipeline, { ...caller, planId, byok }, () =>
-      pipeline.prd({ idea, context, language, answers }),
+      pipeline.prd({ idea, context, language, answers, images }),
     );
     await savePrd(planId, prd);
     return NextResponse.json({ planId, prd });

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { KeyStatusMap } from '@/lib/keys';
 import type { PoolUsage } from '@/lib/limits';
+import type { AuthUser } from '@/lib/auth';
 
 export type SidebarPlanItem = {
   id: string;
@@ -20,15 +21,19 @@ export function Sidebar({
   isOpen,
   onToggle,
   onOpenSettings,
+  onOpenAuthModal,
   savedKeys,
+  user,
 }: {
   plans: SidebarPlanItem[];
   currentPlanId?: string;
   isOpen: boolean;
   onToggle: () => void;
   onOpenSettings: () => void;
+  onOpenAuthModal?: () => void;
   savedKeys?: KeyStatusMap | null;
   usage?: PoolUsage | null;
+  user?: AuthUser | null;
 }) {
   const router = useRouter();
   const mounted = useSyncExternalStore(
@@ -40,6 +45,18 @@ export function Sidebar({
   const [showSearch, setShowSearch] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (!confirm('Log out from your account?')) return;
+    setIsLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    } catch {
+      setIsLoggingOut(false);
+    }
+  }
 
   const planList = useMemo(
     () => plans.filter((p) => !deletedIds.includes(p.id)),
@@ -64,9 +81,9 @@ export function Sidebar({
     const sevenDaysAgo = startOfToday - 7 * 24 * 60 * 60 * 1000;
 
     const groups: { label: string; items: SidebarPlanItem[] }[] = [
-      { label: 'Hari ini', items: [] },
-      { label: '7 hari terakhir', items: [] },
-      { label: 'Sebelumnya', items: [] },
+      { label: 'Today', items: [] },
+      { label: 'Previous 7 days', items: [] },
+      { label: 'Earlier', items: [] },
     ];
 
     const sorted = [...filtered].sort(
@@ -90,7 +107,7 @@ export function Sidebar({
   async function handleDelete(e: React.MouseEvent, id: string) {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Hapus rencana ini?')) return;
+    if (!confirm('Delete this plan?')) return;
 
     setDeletingId(id);
     try {
@@ -102,7 +119,7 @@ export function Sidebar({
         }
       }
     } catch {
-      alert('Gagal menghapus rencana.');
+      alert('Failed to delete plan.');
     } finally {
       setDeletingId(null);
     }
@@ -120,7 +137,7 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col bg-[#2b3839] text-gray-200 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col h-full bg-[#2b3839] text-gray-200 ${
           mounted ? 'transition-[width,transform] duration-200 ease-in-out' : ''
         } md:static shrink-0 select-none overflow-x-hidden ${
           isOpen ? 'w-60 translate-x-0' : '-translate-x-full md:translate-x-0 md:w-16'
@@ -134,12 +151,12 @@ export function Sidebar({
                 preflight
               </Link>
               <div className="flex items-center gap-1">
-                {/* Search button next to sembunyikan sidebar */}
+                {/* Search button next to collapse sidebar */}
                 <button
                   type="button"
                   onClick={() => setShowSearch((v) => !v)}
-                  title="Cari ide"
-                  aria-label="Cari ide"
+                  title="Search ideas"
+                  aria-label="Search ideas"
                   className={`rounded p-1.5 transition-colors ${
                     showSearch ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
@@ -154,12 +171,12 @@ export function Sidebar({
                   </svg>
                 </button>
 
-                {/* Sembunyikan sidebar button */}
+                {/* Collapse sidebar button */}
                 <button
                   type="button"
                   onClick={onToggle}
-                  aria-label="Sembunyikan sidebar"
-                  title="Sembunyikan sidebar"
+                  aria-label="Hide sidebar"
+                  title="Hide sidebar"
                   className="rounded p-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   {/* Panel left collapse icon from Figma */}
@@ -175,8 +192,8 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={onToggle}
-                aria-label="Tampilkan sidebar"
-                title="Tampilkan sidebar"
+                aria-label="Show sidebar"
+                title="Show sidebar"
                 className="rounded p-1.5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
               >
                 {/* Panel left expand icon */}
@@ -201,7 +218,7 @@ export function Sidebar({
                     autoFocus
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    placeholder="Cari ide..."
+                    placeholder="Search ideas..."
                     className="w-full rounded-md bg-white/10 pl-8 pr-7 py-1.5 text-[12.5px] text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20"
                   />
                   <svg className="absolute left-2.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -274,10 +291,10 @@ export function Sidebar({
 
         {/* Plan History List */}
         {isOpen ? (
-          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-4">
             {grouped.length === 0 ? (
               <p className="px-3 py-4 text-center text-[12px] text-gray-400">
-                {filter ? 'Tidak ada rencana cocok.' : 'Belum ada riwayat.'}
+                {filter ? 'No matching plans.' : 'No history yet.'}
               </p>
             ) : (
               grouped.map((group) => (
@@ -313,7 +330,7 @@ export function Sidebar({
                             type="button"
                             onClick={(e) => handleDelete(e, plan.id)}
                             disabled={deletingId === plan.id}
-                            title="Hapus rencana"
+                            title="Delete plan"
                             className="absolute right-1.5 top-1.5 hidden rounded p-1 text-gray-400 hover:text-red-400 group-hover:block transition-colors"
                           >
                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -363,38 +380,214 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Profile Footer from Figma */}
+        {/* Profile Footer */}
         <div className="p-3 mt-auto shrink-0 border-t border-white/5">
           {isOpen ? (
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-white text-[#2b3839] font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                  JA
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[13.5px] font-medium text-white truncate">Joshua Adams</div>
-                  <div className="text-[11.5px] text-gray-400 truncate">
-                    {hasByok ? 'BYOK plan' : 'Free plan'}
+            user ? (
+              <div className="flex items-center justify-between w-full p-2 rounded-lg text-left">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover shrink-0 select-none border border-white/10"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-signal text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs select-none">
+                      {user.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium text-white truncate">{user.name}</div>
+                    <div className="text-[11px] text-[#8fa8a8] truncate">
+                      {user.email}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={onOpenSettings}
+                    title="Settings"
+                    aria-label="Settings"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.75}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="4" y1="21" x2="4" y2="14" />
+                      <line x1="4" y1="10" x2="4" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12" y2="3" />
+                      <line x1="20" y1="21" x2="20" y2="16" />
+                      <line x1="20" y1="12" x2="20" y2="3" />
+                      <line x1="1" y1="14" x2="7" y2="14" />
+                      <line x1="9" y1="8" x2="15" y2="8" />
+                      <line x1="17" y1="16" x2="23" y2="16" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    title="Log out"
+                    aria-label="Log out"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.75}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onOpenAuthModal}
+                  className="flex flex-1 items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white transition-all cursor-pointer text-[13px] font-medium border border-white/5 shadow-xs"
+                >
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.98 0 12c0 2.02.45 3.84 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span className="truncate">Sign in with Google</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  title="Settings"
+                  aria-label="Settings"
+                  className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer border border-white/5"
+                >
+                  <svg
+                    className="w-4.5 h-4.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="4" y1="21" x2="4" y2="14" />
+                    <line x1="4" y1="10" x2="4" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12" y2="3" />
+                    <line x1="20" y1="21" x2="20" y2="16" />
+                    <line x1="20" y1="12" x2="20" y2="3" />
+                    <line x1="1" y1="14" x2="7" y2="14" />
+                    <line x1="9" y1="8" x2="15" y2="8" />
+                    <line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                </button>
+              </div>
+            )
           ) : (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
+              {user ? (
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  title={`${user.name} (${user.email})`}
+                  className="w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-signal text-white font-bold text-xs flex items-center justify-center">
+                      {user.name[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenAuthModal}
+                  title="Sign in with Google"
+                  aria-label="Sign in with Google"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.98 0 12c0 2.02.45 3.84 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onOpenSettings}
-                title={`Joshua Adams (${hasByok ? 'BYOK plan' : 'Free plan'}) - Pengaturan`}
-                className="w-8 h-8 rounded-full bg-white text-[#2b3839] font-bold text-xs flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-white/20 transition-all shadow-xs cursor-pointer"
+                title="Settings"
+                aria-label="Settings"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >
-                JA
+                <svg
+                  className="w-5 h-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" y1="21" x2="4" y2="14" />
+                  <line x1="4" y1="10" x2="4" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12" y2="3" />
+                  <line x1="20" y1="21" x2="20" y2="16" />
+                  <line x1="20" y1="12" x2="20" y2="3" />
+                  <line x1="1" y1="14" x2="7" y2="14" />
+                  <line x1="9" y1="8" x2="15" y2="8" />
+                  <line x1="17" y1="16" x2="23" y2="16" />
+                </svg>
               </button>
             </div>
           )}

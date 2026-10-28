@@ -34,8 +34,8 @@ export type ModelTier = 'fast' | 'deep';
 const MODELS: Record<ProviderId, Record<ModelTier, readonly string[]>> = {
   // Google AI Studio
   google: {
-    fast: ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
-    deep: ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-flash-lite-latest'],
+    fast: ['gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'],
+    deep: ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-flash-lite-latest'],
   },
   // Groq high-speed inference
   groq: {
@@ -124,12 +124,22 @@ export function resolveChain(creds: Credentials, tier: ModelTier): ResolvedModel
 
   // Caller specifically asked for a custom model id
   if (creds.model) {
-    return [
+    const list: ResolvedModel[] = [
       {
         id: `${creds.provider}:${creds.model}`,
         model: factory(creds.model),
       },
     ];
+    // Append tier fallbacks so deprecated/unavailable models cleanly degrade
+    for (const fallback of MODELS[creds.provider][tier]) {
+      if (fallback !== creds.model) {
+        list.push({
+          id: `${creds.provider}:${fallback}`,
+          model: factory(fallback),
+        });
+      }
+    }
+    return list;
   }
 
   return MODELS[creds.provider][tier].map((id) => ({

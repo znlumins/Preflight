@@ -116,6 +116,9 @@ export function errorMessage(err: unknown, byok: boolean): string {
   if (/no object generated|could not parse|did not match|schema|validation/i.test(raw)) {
     return 'Jawaban model AI tidak bisa dipakai kali ini. Coba lagi.';
   }
+  if (/does not exist|not found|access to it|unsupported model/i.test(raw)) {
+    return 'Model AI ini tidak ditemukan atau tidak didukung pada akun API key kamu. Coba pilih model lain di dropdown.';
+  }
   if (/timeout|timed out|aborted/i.test(raw)) {
     return 'Model AI terlalu lama menjawab. Coba lagi.';
   }

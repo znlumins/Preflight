@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { PlanDocument } from '@/components/PlanDocument';
 import { AppShell } from '@/components/shell/AppShell';
 import { keyStatus } from '@/lib/keys';
+import { getAuthUser } from '@/lib/auth';
 import { poolUsage } from '@/lib/limits';
 import { listPlans, loadPlan } from '@/lib/plans';
 import { listRevisions } from '@/lib/revise';
@@ -13,21 +14,22 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
   const sidebarCookie = cookieStore.get('preflight_sidebar_open')?.value;
   const initialSidebarOpen = sidebarCookie !== undefined ? sidebarCookie === 'true' : true;
 
-  const sessionId = await peekSessionId();
-  if (!sessionId) notFound();
+  const [sessionId, authUser] = await Promise.all([peekSessionId(), getAuthUser()]);
+  if (!sessionId && !authUser) notFound();
 
   const { id } = await params;
-  const data = await loadPlan(id, sessionId);
+  const data = await loadPlan(id, sessionId ?? '', authUser?.id);
   if (!data) notFound();
 
   const [allPlans, keys, rows] = await Promise.all([
-    listPlans(sessionId),
-    keyStatus(sessionId),
+    listPlans(sessionId ?? '', authUser?.id),
+    sessionId ? keyStatus(sessionId) : {},
     listRevisions(id),
   ]);
 
   const hasByok = Object.keys(keys).length > 0;
-  const usage = !hasByok ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
+  const usage =
+    sessionId && !hasByok ? await poolUsage({ sessionId, ipHash: await clientIpHash() }) : null;
 
   // Only the newest live revision can be rolled back; undoing an older one
   // would silently discard everything done after it.
@@ -49,6 +51,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
       currentPlanId={id}
       savedKeys={keys}
       usage={usage}
+      user={authUser}
       stage={data.plan.status === 'done' ? 'task' : 'prd'}
       initialSidebarOpen={initialSidebarOpen}
     >

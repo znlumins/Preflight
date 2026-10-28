@@ -146,7 +146,7 @@ export function PlanDocument({
   const complete = plan.status === 'done';
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-6 py-10 sm:py-14">
+    <div className="mx-auto w-full max-w-[46rem] px-6 pt-10 sm:pt-14 pb-28 sm:pb-36">
       {!hideHeader && (
         <SiteHeader
           links={[
@@ -166,15 +166,15 @@ export function PlanDocument({
           download={{ href: `/api/plan/${plan.id}/markdown`, label: 'Unduh semuanya (.md)' }}
         />
       ) : (
-        <p className="mt-16 text-[16px] text-muted">Menyusun PRD dari jawaban kamu…</p>
+        <p className="mt-16 text-[16px] text-gray-500">Menyusun PRD dari jawaban kamu…</p>
       )}
 
       {features.length > 0 && (
-        <section className="settle mt-16 border-t border-rule pt-8">
+        <section className="settle mt-16 border-t border-gray-200 pt-8">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-[22px] font-semibold tracking-tight text-ink">Rencana kerja</h2>
+            <h2 className="text-[22px] font-semibold tracking-tight text-gray-900">Rencana kerja</h2>
             {tasks.length > 0 && (
-              <p className="text-[13.5px] tabular-nums text-faint">
+              <p className="text-[13.5px] tabular-nums text-gray-500">
                 {doneCount} dari {tasks.length} task selesai
               </p>
             )}
@@ -224,7 +224,7 @@ function StageRail({
   const reached = pending ? STAGES.findIndex((s) => s.key === pending) - 1 : STAGES.length - 1;
 
   return (
-    <div className="mt-10 border-y border-rule py-4">
+    <div className="mt-10 border-y border-gray-200 py-4">
       <ol className="flex flex-wrap items-center gap-x-6 gap-y-2">
         {STAGES.map((s, i) => {
           const done = i <= reached;
@@ -234,12 +234,12 @@ function StageRail({
               <span
                 aria-hidden
                 className={`h-[2px] w-5 rounded-full ${
-                  active ? 'running bg-signal' : done ? 'bg-signal' : 'bg-rule'
+                  active ? 'running bg-signal' : done ? 'bg-signal' : 'bg-gray-200'
                 }`}
               />
               <span
                 className={`text-[14px] ${
-                  active ? 'font-medium text-signal' : done ? 'text-ink' : 'text-faint'
+                  active ? 'font-medium text-signal' : done ? 'font-medium text-gray-900' : 'text-gray-400'
                 }`}
               >
                 {s.label}
@@ -255,7 +255,7 @@ function StageRail({
           <button
             type="button"
             onClick={onRetry}
-            className="mt-2 text-[14px] font-medium text-ink underline decoration-rule underline-offset-4 hover:text-signal"
+            className="mt-2 text-[14px] font-medium text-gray-900 underline decoration-gray-300 underline-offset-4 hover:text-signal"
           >
             Coba lagi
           </button>
@@ -287,7 +287,7 @@ function FeatureSection({
 
       <div className="mt-7">
         {tasks.length === 0 ? (
-          <p className="text-[14.5px] text-faint">
+          <p className="text-[14.5px] text-gray-500">
             {pendingTasks ? 'Menyusun task…' : 'Belum ada task.'}
           </p>
         ) : (
@@ -308,7 +308,7 @@ function FeatureSection({
                     ${
                       t.done
                         ? 'border-signal bg-signal text-white'
-                        : 'border-rule text-transparent hover:border-faint'
+                        : 'border-gray-300 text-transparent hover:border-gray-400'
                     }`}
                 >
                   <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
@@ -323,15 +323,15 @@ function FeatureSection({
                 </button>
 
                 <div className={`flex min-w-0 items-baseline gap-2.5 ${t.done ? 'opacity-45' : ''}`}>
-                  <span className="font-mono text-[12px] tabular-nums text-faint">{i + 1}</span>
-                  <h4 className="text-[16px] font-medium leading-snug text-ink">{t.title}</h4>
+                  <span className="font-mono text-[12px] tabular-nums text-gray-400">{i + 1}</span>
+                  <h4 className="text-[16px] font-semibold leading-snug text-gray-900">{t.title}</h4>
                 </div>
                 <div
                   className={`col-span-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:pl-[1.9rem] ${
                     t.done ? 'opacity-45' : ''
                   }`}
                 >
-                  <p className="mt-1 max-w-[64ch] text-[14.5px] leading-relaxed text-muted">
+                  <p className="mt-1 max-w-[64ch] text-[14.5px] leading-relaxed text-gray-700">
                     {t.description}
                   </p>
                   <PromptBlock text={t.agentPrompt} />

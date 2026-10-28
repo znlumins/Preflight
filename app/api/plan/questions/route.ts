@@ -10,7 +10,7 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const body = await readBody(req, questionsBody);
   if (body.error) return body.error;
-  const { idea, context, language, provider, model } = body.data;
+  const { idea, context, language, provider, model, images } = body.data;
 
   const caller = await getCaller();
   const { pipeline, byok } = await pipelineFor(caller.sessionId, provider, model);
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
   try {
     const questionnaire = await withUsage(pipeline, { ...caller, planId: null, byok }, () =>
-      pipeline.questions({ idea, context, language }),
+      pipeline.questions({ idea, context, language, images }),
     );
     return NextResponse.json(questionnaire);
   } catch (err) {

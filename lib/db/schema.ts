@@ -22,10 +22,39 @@ import {
 
 const now = sql`now()`;
 
+export const users = pgTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    googleId: text('google_id').notNull().unique(),
+    email: text('email').notNull().unique(),
+    name: text('name').notNull(),
+    avatarUrl: text('avatar_url'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(now),
+  },
+  (t) => [index('users_email_idx').on(t.email)],
+);
+
+export const userSessions = pgTable(
+  'user_sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(now),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('user_sessions_user_idx').on(t.userId)],
+);
+
 export const plans = pgTable(
   'plans',
   {
     id: text('id').primaryKey(),
+    /** Registered user account if logged in. */
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
     /** Anonymous cookie session. No accounts in v1. */
     sessionId: text('session_id').notNull(),
     /** Salted IP hash, so clearing the cookie does not reset the pool allowance. */
@@ -68,6 +97,7 @@ export const plans = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(now),
   },
   (t) => [
+    index('plans_user_idx').on(t.userId, t.createdAt),
     index('plans_session_idx').on(t.sessionId, t.createdAt),
     index('plans_ip_idx').on(t.ipHash, t.createdAt),
   ],
@@ -257,6 +287,8 @@ export const revisions = pgTable(
   (t) => [index('revisions_plan_idx').on(t.planId, t.createdAt)],
 );
 
+export type UserRow = typeof users.$inferSelect;
+export type UserSessionRow = typeof userSessions.$inferSelect;
 export type PlanRow = typeof plans.$inferSelect;
 export type FeatureRow = typeof features.$inferSelect;
 export type SubfeatureRow = typeof subfeatures.$inferSelect;

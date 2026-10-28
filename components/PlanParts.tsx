@@ -15,8 +15,8 @@ export type Spec = SpecBatch['specs'][number];
 export function Prose({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-[15px] font-semibold tracking-tight text-ink">{heading}</h2>
-      <div className="mt-2.5 text-[15.5px] text-ink">{children}</div>
+      <h2 className="text-[16px] font-semibold tracking-tight text-gray-900">{heading}</h2>
+      <div className="mt-2.5 text-[15.5px] text-gray-700 leading-relaxed">{children}</div>
     </section>
   );
 }
@@ -25,8 +25,8 @@ export function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="space-y-2">
       {items.map((it) => (
-        <li key={it} className="flex gap-2.5 leading-[1.6]">
-          <span aria-hidden className="mt-[0.7em] h-px w-2.5 shrink-0 bg-faint" />
+        <li key={it} className="flex gap-2.5 leading-[1.6] text-gray-700">
+          <span aria-hidden className="mt-[0.7em] h-px w-2.5 shrink-0 bg-gray-400" />
           <span className="min-w-0">{it}</span>
         </li>
       ))}
@@ -46,17 +46,17 @@ export function PrdSection({
 }) {
   return (
     <article className={`${animate ? 'settle ' : ''}mt-14`}>
-      <h1 className="text-[34px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[40px]">
+      <h1 className="text-[34px] font-bold leading-[1.15] tracking-tight text-gray-900 sm:text-[40px]">
         {prd.title}
       </h1>
-      <p className="mt-4 max-w-[58ch] text-[17px] leading-relaxed text-muted">{prd.oneLiner}</p>
+      <p className="mt-4 max-w-[58ch] text-[17px] leading-relaxed text-gray-600">{prd.oneLiner}</p>
 
       {download && (
         <div className="mt-6">
           <a
             href={download.href}
             download
-            className="tap inline-flex items-center gap-2 rounded-[3px] border border-rule bg-paper-sunk px-4 py-2.5 text-[14.5px] font-medium text-ink transition-colors hover:border-signal hover:text-signal"
+            className="tap inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14.5px] font-medium text-gray-800 shadow-xs transition-colors hover:border-gray-300 hover:text-gray-900"
           >
             {/* Icon plus a verb: reads as an action, not a footnote. */}
             <svg viewBox="0 0 16 16" fill="none" aria-hidden className="h-4 w-4">
@@ -75,7 +75,7 @@ export function PrdSection({
 
       <div className="mt-11 space-y-9">
         <Prose heading="Masalah">
-          <p className="max-w-[68ch] leading-[1.75]">{prd.problem}</p>
+          <p className="max-w-[68ch] leading-[1.75] text-gray-700">{prd.problem}</p>
         </Prose>
 
         <div className="grid gap-9 sm:grid-cols-2">
@@ -106,21 +106,21 @@ export function PrdSection({
                 ['Deployment', prd.techStack.deployment],
               ] as const
             ).map(([k, v]) => (
-              <div key={k} className="flex gap-4 border-b border-rule py-2 last:border-0">
-                <dt className="w-24 shrink-0 text-muted">{k}</dt>
-                <dd className="min-w-0 flex-1 text-ink">{v}</dd>
+              <div key={k} className="flex gap-4 border-b border-gray-100 py-2.5 last:border-0 text-[14px]">
+                <dt className="w-28 shrink-0 font-medium text-gray-500">{k}</dt>
+                <dd className="min-w-0 flex-1 font-mono text-[13.5px] text-gray-900">{v}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-3 max-w-[68ch] leading-[1.75] text-muted">{prd.techStack.rationale}</p>
+          <p className="mt-3 max-w-[68ch] leading-[1.75] text-gray-600">{prd.techStack.rationale}</p>
         </Prose>
 
         <Prose heading="Risiko">
           <ul className="max-w-[68ch] space-y-3">
             {prd.risks.map((r) => (
-              <li key={r.risk} className="border-l border-rule pl-4">
-                <p className="font-medium text-ink">{r.risk}</p>
-                <p className="mt-0.5 leading-[1.7] text-muted">{r.mitigation}</p>
+              <li key={r.risk} className="border-l-2 border-orange-200 pl-4 py-0.5">
+                <p className="font-medium text-gray-900">{r.risk}</p>
+                <p className="mt-1 leading-[1.7] text-gray-600">{r.mitigation}</p>
               </li>
             ))}
           </ul>
@@ -133,8 +133,8 @@ export function PrdSection({
 export function SpecPart({ heading, items }: { heading: string; items: string[] }) {
   return (
     <div>
-      <h5 className="text-[13.5px] font-semibold text-ink">{heading}</h5>
-      <ul className="mt-1.5 space-y-1.5 text-muted">
+      <h5 className="text-[13.5px] font-semibold text-gray-900">{heading}</h5>
+      <ul className="mt-1.5 space-y-1.5 text-gray-600">
         {items.map((it) => (
           <li key={it} className="leading-[1.65]">
             {it}
@@ -175,9 +175,9 @@ export function FeatureIndex({
     : undefined;
 
   return (
-    <nav id="daftar-fitur" aria-label="Daftar fitur" className="mt-8 border-l-2 border-rule pl-4">
+    <nav id="daftar-fitur" aria-label="Daftar fitur" className="mt-8 border-l-2 border-gray-200 pl-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="text-[13px] font-semibold text-faint">Daftar fitur</h3>
+        <h3 className="text-[13px] font-semibold text-gray-500">Daftar fitur</h3>
         {next && (
           <a
             href={`#${taskAnchor(next.id)}`}
@@ -197,8 +197,8 @@ export function FeatureIndex({
                 href={`#${featureAnchor(f.id)}`}
                 className="group flex items-baseline justify-between gap-4 py-3 text-[14.5px] leading-snug pointer-fine:py-1"
               >
-                <span className="min-w-0 text-muted group-hover:text-signal">{f.name}</span>
-                <span className="shrink-0 font-mono text-[12px] tabular-nums text-faint">
+                <span className="min-w-0 text-gray-700 group-hover:text-signal">{f.name}</span>
+                <span className="shrink-0 font-mono text-[12px] tabular-nums text-gray-500">
                   {progress ? `${done}/${own.length}` : own.length}
                 </span>
               </a>
@@ -223,25 +223,25 @@ export function FeatureHeader({
   return (
     <>
       <div className="flex items-baseline gap-3">
-        <h3 className="text-[20px] font-semibold tracking-tight text-ink">{feature.name}</h3>
+        <h3 className="text-[20px] font-semibold tracking-tight text-gray-900">{feature.name}</h3>
         <span
           className={`font-mono text-[12px] ${
-            feature.priority === 'P0' ? 'text-signal' : 'text-faint'
+            feature.priority === 'P0' ? 'text-signal' : 'text-gray-500'
           }`}
         >
           {feature.priority}
         </span>
       </div>
-      <p className="mt-1.5 max-w-[64ch] text-[15.5px] leading-relaxed text-muted">
+      <p className="mt-1.5 max-w-[64ch] text-[15.5px] leading-relaxed text-gray-700">
         {feature.benefit}
       </p>
 
       {subfeatures.length > 0 && (
-        <ul className="mt-4 space-y-1.5 border-l border-rule pl-4">
+        <ul className="mt-4 space-y-1.5 border-l border-gray-200 pl-4">
           {subfeatures.map((s) => (
             <li key={s.id} className="text-[14.5px] leading-snug">
-              <span className="text-ink">{s.name}</span>
-              <span className="text-faint"> — {s.summary}</span>
+              <span className="text-gray-900 font-medium">{s.name}</span>
+              <span className="text-gray-600"> — {s.summary}</span>
             </li>
           ))}
         </ul>
@@ -249,15 +249,15 @@ export function FeatureHeader({
 
       {spec && (
         <details className="group mt-5">
-          <summary className="tap cursor-pointer list-none text-[14px] text-muted hover:text-signal">
-            <span className="underline decoration-rule underline-offset-4 group-open:hidden">
+          <summary className="tap cursor-pointer list-none text-[14px] text-gray-600 hover:text-signal">
+            <span className="underline decoration-gray-300 underline-offset-4 group-open:hidden">
               Lihat spec
             </span>
-            <span className="hidden underline decoration-rule underline-offset-4 group-open:inline">
+            <span className="hidden underline decoration-gray-300 underline-offset-4 group-open:inline">
               Sembunyikan spec
             </span>
           </summary>
-          <div className="mt-4 grid gap-6 border-l border-rule pl-4 text-[14.5px] sm:grid-cols-2">
+          <div className="mt-4 grid gap-6 border-l border-gray-200 pl-4 text-[14.5px] sm:grid-cols-2">
             <SpecPart heading="User story" items={spec.userStories} />
             <SpecPart heading="Kriteria penerimaan" items={spec.acceptanceCriteria} />
             <SpecPart heading="Data & state" items={spec.dataAndState} />

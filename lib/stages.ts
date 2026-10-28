@@ -3,6 +3,7 @@ import { Pipeline } from './ai/pipeline';
 import type { ProviderId } from './ai/provider';
 import type { FeatureSet, Prd, SpecBatch } from './ai/schemas';
 import { bad, errorMessage, pipelineFor, withUsage } from './api';
+import { getAuthUser } from './auth';
 import { checkStageLimit } from './limits';
 import { pendingStage, type StageKey as PendingStage } from './pending';
 import { loadPlan, markError } from './plans';
@@ -34,11 +35,11 @@ export async function runStage(
   ctx: { params: Promise<{ id: string }> },
   stage: (loaded: Loaded) => Promise<unknown>,
 ) {
-  const sessionId = await peekSessionId();
-  if (!sessionId) return bad('Sesi tidak ditemukan.', 404);
+  const [sessionId, authUser] = await Promise.all([peekSessionId(), getAuthUser()]);
+  if (!sessionId && !authUser) return bad('Sesi tidak ditemukan.', 404);
 
   const { id: planId } = await ctx.params;
-  const loaded = await loadPlan(planId, sessionId);
+  const loaded = await loadPlan(planId, sessionId ?? '', authUser?.id);
   if (!loaded) return bad('Plan tidak ditemukan.', 404);
   if (!loaded.plan.prd) return bad('PRD belum dibuat.', 409);
   if (pendingStage(loaded) !== key) {
@@ -63,8 +64,10 @@ export async function runStage(
       .map((f) => f.spec as SpecBatch['specs'][number]),
   };
 
+  const effectiveSessionId = sessionId ?? loaded.plan.sessionId;
+
   const { pipeline, byok } = await pipelineFor(
-    sessionId,
+    effectiveSessionId,
     (loaded.plan.provider as ProviderId) ?? undefined,
     loaded.plan.model ?? undefined,
   );
@@ -74,16 +77,19 @@ export async function runStage(
 
   const ipHash = await clientIpHash();
   try {
-    const result = await withUsage(pipeline, { sessionId, ipHash, planId, byok }, () =>
-      stage({
-        pipeline,
-        sessionId,
-        planId,
-        language: loaded.plan.language,
-        prd: loaded.plan.prd as Prd,
-        featureSet,
-        specs,
-      }),
+    const result = await withUsage(
+      pipeline,
+      { sessionId: effectiveSessionId, ipHash, planId, byok },
+      () =>
+        stage({
+          pipeline,
+          sessionId: effectiveSessionId,
+          planId,
+          language: loaded.plan.language,
+          prd: loaded.plan.prd as Prd,
+          featureSet,
+          specs,
+        }),
     );
     return NextResponse.json(result);
   } catch (err) {

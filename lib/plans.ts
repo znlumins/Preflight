@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { db } from './db';
 import { features, plans, subfeatures, tasks, usageLog } from './db/schema';
@@ -17,6 +17,7 @@ export type PlanStatus = 'draft' | 'prd' | 'features' | 'specs' | 'done' | 'erro
 
 export async function createPlan(input: {
   sessionId: string;
+  userId?: string | null;
   ipHash: string | null;
   idea: string;
   context?: string;
@@ -30,6 +31,7 @@ export async function createPlan(input: {
   await db.insert(plans).values({
     id,
     sessionId: input.sessionId,
+    userId: input.userId ?? null,
     ipHash: input.ipHash,
     idea: input.idea,
     context: input.context ?? null,
@@ -43,12 +45,16 @@ export async function createPlan(input: {
   return id;
 }
 
-/** Loads a plan and everything under it, scoped to the owning session. */
-export async function loadPlan(planId: string, sessionId: string) {
+/** Loads a plan and everything under it, scoped to the owning session or user. */
+export async function loadPlan(planId: string, sessionId: string, userId?: string | null) {
+  const ownership = userId
+    ? or(eq(plans.userId, userId), eq(plans.sessionId, sessionId))
+    : eq(plans.sessionId, sessionId);
+
   const [plan] = await db
     .select()
     .from(plans)
-    .where(and(eq(plans.id, planId), eq(plans.sessionId, sessionId)))
+    .where(and(eq(plans.id, planId), ownership))
     .limit(1);
   if (!plan) return null;
 
@@ -65,7 +71,11 @@ export async function loadPlan(planId: string, sessionId: string) {
   return { plan, features: featureRows, subfeatures: subRows, tasks: taskRows };
 }
 
-export async function listPlans(sessionId: string) {
+export async function listPlans(sessionId: string, userId?: string | null) {
+  const condition = userId
+    ? or(eq(plans.userId, userId), eq(plans.sessionId, sessionId))
+    : eq(plans.sessionId, sessionId);
+
   return db
     .select({
       id: plans.id,
@@ -75,21 +85,34 @@ export async function listPlans(sessionId: string) {
       createdAt: plans.createdAt,
     })
     .from(plans)
-    .where(eq(plans.sessionId, sessionId))
+    .where(condition)
     .orderBy(asc(plans.createdAt));
 }
 
-export async function deletePlan(planId: string, sessionId: string) {
+export async function deletePlan(planId: string, sessionId: string, userId?: string | null) {
+  const ownership = userId
+    ? or(eq(plans.userId, userId), eq(plans.sessionId, sessionId))
+    : eq(plans.sessionId, sessionId);
+
   return db
     .delete(plans)
-    .where(and(eq(plans.id, planId), eq(plans.sessionId, sessionId)));
+    .where(and(eq(plans.id, planId), ownership));
 }
 
-export async function renamePlan(planId: string, sessionId: string, title: string) {
+export async function renamePlan(
+  planId: string,
+  sessionId: string,
+  title: string,
+  userId?: string | null,
+) {
+  const ownership = userId
+    ? or(eq(plans.userId, userId), eq(plans.sessionId, sessionId))
+    : eq(plans.sessionId, sessionId);
+
   return db
     .update(plans)
     .set({ title: title.trim().slice(0, 100), updatedAt: new Date() })
-    .where(and(eq(plans.id, planId), eq(plans.sessionId, sessionId)));
+    .where(and(eq(plans.id, planId), ownership));
 }
 
 const touch = () => ({ updatedAt: new Date() });
