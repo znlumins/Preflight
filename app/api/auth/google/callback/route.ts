@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthSession, linkAnonymousPlansToUser, upsertGoogleUser } from '@/lib/auth';
+import { createAuthSession, getAuthOrigin, linkAnonymousPlansToUser, upsertGoogleUser } from '@/lib/auth';
 import { peekSessionId } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +11,7 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(request.url).origin;
+  const origin = getAuthOrigin(request);
 
   if (error) {
     return NextResponse.redirect(

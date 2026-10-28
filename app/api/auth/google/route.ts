@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
+import { getAuthOrigin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +9,7 @@ export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-  const url = new URL(request.url);
-  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || url.origin;
+  const origin = getAuthOrigin(request);
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(

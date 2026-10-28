@@ -185,3 +185,14 @@ export async function linkAnonymousPlansToUser(sessionId: string, userId: string
     })
     .where(and(eq(plans.sessionId, sessionId), isNull(plans.userId)));
 }
+
+/** Menentukan origin (localhost atau domain produksi) secara dinamis dari request headers. */
+export function getAuthOrigin(request: Request): string {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const proto =
+    request.headers.get('x-forwarded-proto') || (host && !host.includes('localhost') ? 'https' : 'http');
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(request.url).origin;
+}
