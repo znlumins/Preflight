@@ -45,7 +45,7 @@ export function SoftBlurIn({
               return (
                 <span
                   key={cIdx}
-                  className="inline-block will-change-[transform,opacity,filter]"
+                  className="inline-block"
                   style={{
                     animationName: isExiting ? 'softBlurOut' : 'softBlurIn',
                     animationDuration: `${isExiting ? 250 : duration}ms`,
@@ -74,7 +74,7 @@ export function SoftBlurIn({
       return (
         <span key={wIdx} className="inline-block">
           <span
-            className="inline-block will-change-[transform,opacity,filter]"
+            className="inline-block"
             style={{
               animationName: isExiting ? 'softBlurOut' : 'softBlurIn',
               animationDuration: `${isExiting ? 250 : duration}ms`,

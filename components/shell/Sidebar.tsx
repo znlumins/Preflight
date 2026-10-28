@@ -144,8 +144,10 @@ export function Sidebar({
         <div className="relative w-full h-full overflow-hidden">
           {/* EXPANDED VIEW: Locked to 240px (w-60), preventing text reflow during width transition */}
           <div
-            className={`absolute inset-y-0 left-0 w-60 min-w-[240px] flex flex-col h-full transition-opacity duration-200 ease-out ${
-              isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            className={`absolute inset-y-0 left-0 w-60 min-w-[240px] flex flex-col h-full ${
+              isOpen
+                ? 'opacity-100 pointer-events-auto transition-opacity duration-150 delay-100 ease-out'
+                : 'opacity-0 pointer-events-none transition-opacity duration-100 ease-in'
             }`}
           >
             {/* Top Header */}
@@ -438,8 +440,10 @@ export function Sidebar({
 
           {/* COLLAPSED VIEW (Desktop): Locked to 64px (w-16) */}
           <div
-            className={`hidden md:flex absolute inset-y-0 left-0 w-16 min-w-[64px] flex-col h-full items-center transition-opacity duration-200 ease-out ${
-              !isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            className={`hidden md:flex absolute inset-y-0 left-0 w-16 min-w-[64px] flex-col h-full items-center ${
+              !isOpen
+                ? 'opacity-100 pointer-events-auto transition-opacity duration-150 delay-100 ease-out'
+                : 'opacity-0 pointer-events-none transition-opacity duration-100 ease-in'
             }`}
           >
             {/* Top Header */}
