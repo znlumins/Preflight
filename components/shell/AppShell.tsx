@@ -212,7 +212,7 @@ export function AppShell({
         />
 
         {/* Main Canvas: Rounded top-left card */}
-        <div data-canvas="main" className="flex flex-1 flex-col min-w-0 h-full overflow-hidden bg-white text-[#0f172a] rounded-tl-[24px] shadow-2xl [color-scheme:light]">
+        <div data-canvas="main" className="flex flex-1 flex-col min-w-0 h-full overflow-hidden bg-white text-[#0f172a] rounded-tl-[24px] shadow-lg border-l border-t border-black/5 [color-scheme:light]">
           {/* Top Bar with Stepper */}
           <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
             {/* Left toggle on mobile (when sidebar is offscreen) */}

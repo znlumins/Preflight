@@ -135,8 +135,8 @@ export function Sidebar({
       />
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 h-full bg-[#2b3839] text-gray-200 md:static shrink-0 select-none overflow-hidden will-change-[width] ${
-          mounted ? 'transition-[width,transform] duration-300 ease-[cubic-bezier(0.2,0,0,1)]' : ''
+        className={`fixed top-0 bottom-0 left-0 z-40 h-full bg-[#2b3839] text-gray-200 md:static shrink-0 select-none overflow-hidden ${
+          mounted ? 'sidebar-smooth' : ''
         } ${
           isOpen ? 'w-60 translate-x-0' : '-translate-x-full md:translate-x-0 md:w-16'
         }`}
@@ -144,10 +144,8 @@ export function Sidebar({
         <div className="relative w-full h-full overflow-hidden">
           {/* EXPANDED VIEW: Locked to 240px (w-60), preventing text reflow during width transition */}
           <div
-            className={`absolute inset-y-0 left-0 w-60 min-w-[240px] flex flex-col h-full ${
-              isOpen
-                ? 'opacity-100 pointer-events-auto transition-opacity duration-200 delay-75'
-                : 'opacity-0 pointer-events-none transition-opacity duration-150'
+            className={`absolute inset-y-0 left-0 w-60 min-w-[240px] flex flex-col h-full transition-opacity duration-200 ease-out ${
+              isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
           >
             {/* Top Header */}
@@ -440,10 +438,8 @@ export function Sidebar({
 
           {/* COLLAPSED VIEW (Desktop): Locked to 64px (w-16) */}
           <div
-            className={`hidden md:flex absolute inset-y-0 left-0 w-16 min-w-[64px] flex-col h-full items-center ${
-              !isOpen
-                ? 'opacity-100 pointer-events-auto transition-opacity duration-200 delay-75'
-                : 'opacity-0 pointer-events-none transition-opacity duration-150'
+            className={`hidden md:flex absolute inset-y-0 left-0 w-16 min-w-[64px] flex-col h-full items-center transition-opacity duration-200 ease-out ${
+              !isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
           >
             {/* Top Header */}
